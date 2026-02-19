@@ -43,7 +43,11 @@ Plans:
   2. Available MCP tools (navigate, screenshot, click, etc.) are enumerable from a test endpoint or startup log
   3. FastAPI shutdown terminates the MCP subprocess and all Chromium child processes cleanly
   4. Restarting the server multiple times does not accumulate zombie processes
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 02-mcp-integration-01-PLAN.md — MCPManager class, FastAPI lifespan wiring, /health and /tools endpoints
+- [ ] 02-mcp-integration-02-PLAN.md — Test suite: mock fixture for MCPManager, updated /health tests, new unit tests
 
 ### Phase 3: LangGraph Agent
 **Goal**: The agent accepts a natural-language property query, extracts parameters, constructs domain.com.au search URLs, navigates up to 3 pages, and returns structured listings — verified correct before any streaming is added
@@ -87,7 +91,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/1 | Complete | 2026-02-19 |
-| 2. MCP Integration | 0/TBD | Not started | - |
+| 2. MCP Integration | 0/2 | Not started | - |
 | 3. LangGraph Agent | 0/TBD | Not started | - |
 | 4. SSE Streaming API | 0/TBD | Not started | - |
 | 5. Frontend | 0/TBD | Not started | - |
