@@ -69,11 +69,12 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| FRNT-01 | Phase 1 | Pending |
+| SCRP-01 | Phase 2 | Pending |
 | AGNT-01 | Phase 3 | Pending |
 | AGNT-02 | Phase 3 | Pending |
 | AGNT-03 | Phase 3 | Pending |
 | AGNT-04 | Phase 3 | Pending |
-| SCRP-01 | Phase 2 | Pending |
 | SCRP-02 | Phase 3 | Pending |
 | SCRP-03 | Phase 3 | Pending |
 | SCRP-04 | Phase 3 | Pending |
@@ -83,18 +84,17 @@
 | API-03 | Phase 4 | Pending |
 | API-04 | Phase 4 | Pending |
 | API-05 | Phase 4 | Pending |
-| FRNT-01 | Phase 1 | Pending |
-| FRNT-02 | Phase 6 | Pending |
-| FRNT-03 | Phase 6 | Pending |
-| FRNT-04 | Phase 6 | Pending |
-| FRNT-05 | Phase 6 | Pending |
-| FRNT-06 | Phase 6 | Pending |
+| FRNT-02 | Phase 5 | Pending |
+| FRNT-03 | Phase 5 | Pending |
+| FRNT-04 | Phase 5 | Pending |
+| FRNT-05 | Phase 5 | Pending |
+| FRNT-06 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 20 total
 - Mapped to phases: 20
-- Unmapped: 0 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-19*
-*Last updated: 2026-02-19 after initial definition*
+*Last updated: 2026-02-19 after roadmap creation*
