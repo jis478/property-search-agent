@@ -12,7 +12,7 @@ Build a LangGraph ReAct agent that accepts natural-language property search requ
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - FastAPI project skeleton, config management, and static file serving
+- [x] **Phase 1: Foundation** - FastAPI project skeleton, config management, and static file serving
 - [ ] **Phase 2: MCP Integration** - Playwright MCP subprocess spawns at startup and exposes browser tools
 - [ ] **Phase 3: LangGraph Agent** - Agent browses domain.com.au and returns structured listings (no streaming)
 - [ ] **Phase 4: SSE Streaming API** - Streaming endpoints expose agent events to callers
@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 1 plan
 
 Plans:
-- [ ] 01-foundation-01-PLAN.md — FastAPI skeleton: dependencies, config, HTML shell, package stubs, tests, git hygiene
+- [x] 01-foundation-01-PLAN.md — FastAPI skeleton: dependencies, config, HTML shell, package stubs, tests, git hygiene
 
 ### Phase 2: MCP Integration
 **Goal**: The Playwright MCP subprocess starts when FastAPI starts, registers browser automation tools that the agent can call, and shuts down cleanly without leaving zombie Chromium processes
@@ -86,7 +86,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/1 | Not started | - |
+| 1. Foundation | 1/1 | Complete | 2026-02-19 |
 | 2. MCP Integration | 0/TBD | Not started | - |
 | 3. LangGraph Agent | 0/TBD | Not started | - |
 | 4. SSE Streaming API | 0/TBD | Not started | - |

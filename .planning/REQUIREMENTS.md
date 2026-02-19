@@ -30,7 +30,7 @@
 
 ### Frontend
 
-- [ ] **FRNT-01**: Single HTML page is served by FastAPI (no Node.js/npm build step required)
+- [x] **FRNT-01**: Single HTML page is served by FastAPI (no Node.js/npm build step required)
 - [ ] **FRNT-02**: User can type a natural-language property search query and submit it
 - [ ] **FRNT-03**: Frontend displays an interpretation banner before searching (e.g. "Searching: 3 beds, Fitzroy VIC, $600k–$800k")
 - [ ] **FRNT-04**: Frontend displays a live step log showing plain-English tool labels and the URL being navigated to, as the agent runs
@@ -69,7 +69,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FRNT-01 | Phase 1 | Pending |
+| FRNT-01 | Phase 1 | Complete (2026-02-19) |
 | SCRP-01 | Phase 2 | Pending |
 | AGNT-01 | Phase 3 | Pending |
 | AGNT-02 | Phase 3 | Pending |
@@ -97,4 +97,4 @@
 
 ---
 *Requirements defined: 2026-02-19*
-*Last updated: 2026-02-19 after roadmap creation*
+*Last updated: 2026-02-19 after Phase 1 completion*
