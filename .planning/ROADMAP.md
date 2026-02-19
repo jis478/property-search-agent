@@ -29,7 +29,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. API keys and secrets are loaded from environment variables via pydantic-settings, never hardcoded
   3. `.gitignore` excludes `.env`, `__pycache__`, and virtualenv directories
   4. The project installs cleanly from `requirements.txt` in a fresh virtualenv
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 01-foundation-01-PLAN.md — FastAPI skeleton: dependencies, config, HTML shell, package stubs, tests, git hygiene
 
 ### Phase 2: MCP Integration
 **Goal**: The Playwright MCP subprocess starts when FastAPI starts, registers browser automation tools that the agent can call, and shuts down cleanly without leaving zombie Chromium processes
@@ -83,7 +86,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/TBD | Not started | - |
+| 1. Foundation | 0/1 | Not started | - |
 | 2. MCP Integration | 0/TBD | Not started | - |
 | 3. LangGraph Agent | 0/TBD | Not started | - |
 | 4. SSE Streaming API | 0/TBD | Not started | - |
