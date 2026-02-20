@@ -1,16 +1,63 @@
+import pytest
+from unittest.mock import AsyncMock, MagicMock
 from fastapi.testclient import TestClient
 
 from main import app
 
 
-def test_health():
+@pytest.fixture
+def mock_mcp(monkeypatch):
+    mock_manager = MagicMock()
+    mock_manager.ready = True
+    mock_manager.tools = []
+    mock_manager.start = AsyncMock(return_value=[])
+    mock_manager.stop = AsyncMock()
+
+    # Patch the MCPManager class in main.py's namespace
+    # so lifespan instantiates our mock instead of the real class
+    monkeypatch.setattr("main.MCPManager", lambda: mock_manager)
+    return mock_manager
+
+
+def test_health_ok(mock_mcp):
     with TestClient(app) as client:
         response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["mcp"] == "ready"
 
 
-def test_index_returns_html():
+def test_health_degraded(mock_mcp):
+    mock_mcp.ready = False
+    with TestClient(app) as client:
+        response = client.get("/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "degraded"
+    assert data["mcp"] == "down"
+
+
+def test_tools_endpoint(mock_mcp):
+    # Give the mock some tools
+    tool_a = MagicMock()
+    tool_a.name = "browser_navigate"
+    tool_a.description = "Navigate to a URL"
+    tool_b = MagicMock()
+    tool_b.name = "browser_snapshot"
+    tool_b.description = "Get accessibility snapshot"
+    mock_mcp.tools = [tool_a, tool_b]
+    mock_mcp.start = AsyncMock(return_value=[tool_a, tool_b])
+
+    with TestClient(app) as client:
+        response = client.get("/tools")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["count"] == 2
+    assert any(t["name"] == "browser_navigate" for t in data["tools"])
+
+
+def test_index_returns_html(mock_mcp):
     with TestClient(app) as client:
         response = client.get("/")
     assert response.status_code == 200
