@@ -41,12 +41,25 @@ TOOL_LABELS = {
 
 
 def _condense_args(args: dict) -> dict:
-    """Return a copy of args with any value that is a str > 200 chars removed.
+    """Return a copy of args safe for json.dumps.
 
-    This strips raw base64 screenshot data or other large string payloads from
-    tool_call events so the SSE stream stays lean.
+    - Drops internal LangGraph keys (e.g. 'runtime') that are not user-facing
+    - Drops string values longer than 200 chars (base64 screenshots, etc.)
+    - Converts any non-JSON-serializable value to its str() as a last resort
     """
-    return {k: v for k, v in args.items() if not (isinstance(v, str) and len(v) > 200)}
+    _INTERNAL_KEYS = {"runtime", "store", "config", "context"}
+    result = {}
+    for k, v in args.items():
+        if k in _INTERNAL_KEYS:
+            continue
+        if isinstance(v, str) and len(v) > 200:
+            continue
+        try:
+            json.dumps(v)
+            result[k] = v
+        except (TypeError, ValueError):
+            result[k] = str(v)
+    return result
 
 
 def make_thinking(chunk_content: str) -> dict:
