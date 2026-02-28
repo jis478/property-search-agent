@@ -31,7 +31,7 @@ Build a LangGraph ReAct agent that accepts natural-language property queries, ex
 - Zero results → valid success, return empty list — not an exception
 - Distinct exception classes per failure mode (for Phase 4 SSE to emit typed error events):
   - `BotDetectedError` — domain.com.au returned a challenge/captcha page
-  - `StepLimitError` — agent hit the 10-step LangGraph limit without completing
+  - `StepLimitError` — agent hit the LangGraph recursion limit (default 15 steps — LangGraph counts reasoning supersteps as well as tool calls, so 10 is insufficient for 3-page searches)
   - `MCPError` — Playwright MCP subprocess crashed or became unresponsive
 
 ### Scraping strategy
