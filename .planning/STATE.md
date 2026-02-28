@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 ## Current Position
 
 Phase: 3 of 5 (LangGraph Agent)
-Plan: 2 of 4 in current phase (Plans 01 and 02 complete)
-Status: Phase 3 in progress — Plans 01 and 02 done, Plans 03 and 04 remaining
-Last activity: 2026-02-28 — Phase 3 Plan 02 completed
+Plan: 3 of 4 in current phase (Plans 01, 02, and 03 complete)
+Status: Phase 3 in progress — Plans 01, 02, and 03 done, Plan 04 remaining
+Last activity: 2026-02-28 — Phase 3 Plan 03 completed
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 9 min
-- Total execution time: 0.74 hours
+- Total plans completed: 6
+- Average duration: 8 min
+- Total execution time: 0.78 hours
 
 **By Phase:**
 
@@ -29,11 +29,11 @@ Progress: [█████░░░░░] 50%
 |-------|-------|-------|----------|
 | 01-foundation | 1 | 10 min | 10 min |
 | 02-mcp-integration | 2 | 32 min | 16 min |
-| 03-langgraph-agent (partial) | 2 | 4 min | 2 min |
+| 03-langgraph-agent (partial) | 3 | 6 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 9 min avg
-- Trend: Phase 3 plans fast (infrastructure only — no tests)
+- Last 5 plans: 8 min avg
+- Trend: Phase 3 plans fast (infrastructure + wiring — no new tests required)
 
 *Updated after each plan completion*
 
@@ -62,6 +62,8 @@ Recent decisions affecting current work:
 - [Phase 03-langgraph-agent]: Deferred import of BotDetectedError inside parse_listings_from_message body — avoids ImportError when Plan 02 not yet committed
 - [Phase 03-langgraph-agent]: Partial-results contract: bot_detected=True + non-empty listings returns data (not raises) — per CONTEXT.md locked decision
 - [Phase 03-langgraph-agent]: price field is str|None (not float) — preserves display format like dollar-450-pw or Price-on-application
+- [Phase 03-03]: recursion_limit=15 passed via config dict at ainvoke time (RunnableConfig field) — create_react_agent in langgraph 1.0.10 does not accept it as constructor param
+- [Phase 03-03]: Tool filtering at build_agent using REQUIRED_TOOLS set — only 3 of ~22 Playwright MCP tools admitted
 
 ### Pending Todos
 
@@ -77,5 +79,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 03-langgraph-agent-02-PLAN.md — exceptions, prompts, langgraph+langchain-openai installed
+Stopped at: Completed 03-langgraph-agent-03-PLAN.md — property_agent.py with build_agent + search_properties, agent/__init__.py public API
 Resume file: None
