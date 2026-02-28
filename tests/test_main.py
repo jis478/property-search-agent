@@ -19,7 +19,15 @@ def mock_mcp(monkeypatch):
     return mock_manager
 
 
-def test_health_ok(mock_mcp):
+@pytest.fixture
+def mock_agent(monkeypatch):
+    """Mock build_agent so lifespan does not try to build a real LangGraph agent."""
+    fake_agent = MagicMock()
+    monkeypatch.setattr("main.build_agent", lambda tools: fake_agent)
+    return fake_agent
+
+
+def test_health_ok(mock_mcp, mock_agent):
     with TestClient(app) as client:
         response = client.get("/health")
     assert response.status_code == 200
@@ -28,7 +36,7 @@ def test_health_ok(mock_mcp):
     assert data["mcp"] == "ready"
 
 
-def test_health_degraded(mock_mcp):
+def test_health_degraded(mock_mcp, mock_agent):
     mock_mcp.ready = False
     with TestClient(app) as client:
         response = client.get("/health")
@@ -38,7 +46,7 @@ def test_health_degraded(mock_mcp):
     assert data["mcp"] == "down"
 
 
-def test_tools_endpoint(mock_mcp):
+def test_tools_endpoint(mock_mcp, mock_agent):
     # Give the mock some tools
     tool_a = MagicMock()
     tool_a.name = "browser_navigate"
@@ -57,7 +65,7 @@ def test_tools_endpoint(mock_mcp):
     assert any(t["name"] == "browser_navigate" for t in data["tools"])
 
 
-def test_index_returns_html(mock_mcp):
+def test_index_returns_html(mock_mcp, mock_agent):
     with TestClient(app) as client:
         response = client.get("/")
     assert response.status_code == 200
