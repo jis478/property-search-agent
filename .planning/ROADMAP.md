@@ -59,7 +59,13 @@ Plans:
   3. When domain.com.au returns a bot-challenge page, the agent returns a clear error rather than garbled listing data
   4. The agent stops after at most 10 LangGraph steps and raises a recoverable error instead of looping indefinitely
   5. Results span up to 3 pages of search results (approximately 75 listings) when available
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 03-langgraph-agent-01-PLAN.md — TDD: PropertyListing model, URL builder (build_search_url), listing parser (parse_listings_from_message)
+- [ ] 03-langgraph-agent-02-PLAN.md — Exception classes, system prompt, langgraph + langchain-openai install
+- [ ] 03-langgraph-agent-03-PLAN.md — property_agent.py: build_agent + search_properties, agent/__init__.py public API
+- [ ] 03-langgraph-agent-04-PLAN.md — Integration smoke test script + human verification checkpoint
 
 ### Phase 4: SSE Streaming API
 **Goal**: Two FastAPI endpoints expose the running agent as a Server-Sent Events stream, with all typed event categories emitted, client disconnect handled, and CORS configured for browser use
@@ -92,6 +98,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/1 | Complete | 2026-02-19 |
 | 2. MCP Integration | 1/2 | In Progress|  |
-| 3. LangGraph Agent | 0/TBD | Not started | - |
+| 3. LangGraph Agent | 0/4 | Not started | - |
 | 4. SSE Streaming API | 0/TBD | Not started | - |
 | 5. Frontend | 0/TBD | Not started | - |
