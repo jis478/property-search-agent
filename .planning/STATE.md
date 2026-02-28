@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 ## Current Position
 
 Phase: 3 of 5 (LangGraph Agent)
-Plan: 3 of 4 in current phase (Plans 01, 02, and 03 complete)
-Status: Phase 3 in progress — Plans 01, 02, and 03 done, Plan 04 remaining
-Last activity: 2026-02-28 — Phase 3 Plan 03 completed
+Plan: 4 of 4 in current phase (Plans 01, 02, 03, and 04 complete)
+Status: Phase 3 COMPLETE — all 4 plans done; ready to begin Phase 4 (SSE Streaming API)
+Last activity: 2026-02-28 — Phase 3 Plan 04 completed (checkpoint approved, 17 listings verified)
 
-Progress: [██████░░░░] 60%
+Progress: [███████░░░] 70%
 
 ## Performance Metrics
 
@@ -36,7 +36,7 @@ Progress: [██████░░░░] 60%
 - Trend: Phase 3 plans fast (infrastructure + wiring — no new tests required)
 
 *Updated after each plan completion*
-| Phase 03-langgraph-agent P04 | 2 | 1 tasks | 1 files |
+| Phase 03-langgraph-agent P04 | ~30 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -65,6 +65,8 @@ Recent decisions affecting current work:
 - [Phase 03-langgraph-agent]: price field is str|None (not float) — preserves display format like dollar-450-pw or Price-on-application
 - [Phase 03-03]: recursion_limit=15 passed via config dict at ainvoke time (RunnableConfig field) — create_react_agent in langgraph 1.0.10 does not accept it as constructor param
 - [Phase 03-03]: Tool filtering at build_agent using REQUIRED_TOOLS set — only 3 of ~22 Playwright MCP tools admitted
+- [Phase 03-04]: --browser chromium flag added to MCPManager subprocess args — WSL2 does not have Google Chrome; @playwright/mcp defaults to Chrome and fails silently; --browser chromium forces use of the playwright-managed Chromium binary
+- [Phase 03-04]: pre_model_hook added to build_agent — OpenAI API rejects images in role:tool messages; langchain-mcp-adapters places browser_take_screenshot results in ToolMessages; hook lifts image content to preceding HumanMessage before each LLM call
 
 ### Pending Todos
 
@@ -72,13 +74,17 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 3]: domain.com.au URL params and JSON-LD availability need empirical validation before/during Phase 3 planning
-- [Phase 3]: playwright-stealth compatibility with @playwright/mcp subprocess is unconfirmed
-- [Phase 3]: LLM reliability for Australian suburb-to-postcode+path mapping is unproven
 - [All phases]: mcp_subprocess/ package (not mcp/) — all future phases must import from mcp_subprocess.manager
+- [Phase 4+]: OpenAI API rejects images in role:tool messages — pre_model_hook in build_agent handles this; Phase 4 inherits fix automatically
+- [Phase 4+]: WSL2 requires --browser chromium in MCPManager — already hardcoded; no action needed
+
+**Resolved (Phase 3 empirical validation):**
+- domain.com.au URL params confirmed working — 17 listings returned in smoke test
+- playwright-stealth not needed — domain.com.au did not trigger bot challenge
+- LLM suburb-to-URL mapping confirmed reliable for Richmond VIC query
 
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 03-langgraph-agent-03-PLAN.md — property_agent.py with build_agent + search_properties, agent/__init__.py public API
+Stopped at: Completed 03-langgraph-agent-04-PLAN.md — integration smoke test verified end-to-end; 17 listings returned; Phase 3 COMPLETE; ready for Phase 4 SSE Streaming API
 Resume file: None

@@ -15,7 +15,7 @@
 ### Scraping
 
 - [x] **SCRP-01**: Playwright MCP server (`@playwright/mcp`) spawns as a subprocess at FastAPI startup and is cleanly shut down at FastAPI shutdown
-- [ ] **SCRP-02**: Agent navigates domain.com.au search results pages via Playwright MCP tools
+- [x] **SCRP-02**: Agent navigates domain.com.au search results pages via Playwright MCP tools
 - [x] **SCRP-03**: Agent extracts the following fields for each listing: address, price, bedrooms, bathrooms, property type, and listing URL
 - [x] **SCRP-04**: Agent detects bot-challenged pages (Cloudflare/challenge title or minimal content) and handles gracefully rather than passing garbage to the LLM
 - [x] **SCRP-05**: Agent aggregates results across up to 3 pages of search results (~75 listings maximum)
@@ -75,7 +75,7 @@
 | AGNT-02 | Phase 3 | Complete |
 | AGNT-03 | Phase 3 | Complete |
 | AGNT-04 | Phase 3 | Complete |
-| SCRP-02 | Phase 3 | Pending |
+| SCRP-02 | Phase 3 | Complete |
 | SCRP-03 | Phase 3 | Complete |
 | SCRP-04 | Phase 3 | Complete |
 | SCRP-05 | Phase 3 | Complete |
