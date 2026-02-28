@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Agent autonomously navigates domain.com.au and returns structured property listings — browser automation must work reliably and results must appear in the UI
-**Current focus:** Phase 3 — LangGraph Agent (in progress)
+**Current focus:** Phase 4 — SSE Streaming API (in progress)
 
 ## Current Position
 
-Phase: 3 of 5 (LangGraph Agent)
-Plan: 4 of 4 in current phase (Plans 01, 02, 03, and 04 complete)
-Status: Phase 3 COMPLETE — all 4 plans done; ready to begin Phase 4 (SSE Streaming API)
-Last activity: 2026-02-28 — Phase 3 Plan 04 completed (checkpoint approved, 17 listings verified)
+Phase: 4 of 5 (SSE Streaming API)
+Plan: 1 of 3 in current phase (Plan 01 complete)
+Status: Phase 4 in progress — Plan 01 done (search.py + stream.py route modules); Plans 02 and 03 pending
+Last activity: 2026-02-28 — Phase 4 Plan 01 completed (api/search.py POST /search, api/stream.py GET /stream/{run_id})
 
-Progress: [███████░░░] 70%
+Progress: [████████░░] 77%
 
 ## Performance Metrics
 
@@ -37,6 +37,7 @@ Progress: [███████░░░] 70%
 
 *Updated after each plan completion*
 | Phase 03-langgraph-agent P04 | ~30 min | 2 tasks | 3 files |
+| Phase 04-sse-streaming-api P01 | 2 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,10 @@ Recent decisions affecting current work:
 - [Phase 03-03]: Tool filtering at build_agent using REQUIRED_TOOLS set — only 3 of ~22 Playwright MCP tools admitted
 - [Phase 03-04]: --browser chromium flag added to MCPManager subprocess args — WSL2 does not have Google Chrome; @playwright/mcp defaults to Chrome and fails silently; --browser chromium forces use of the playwright-managed Chromium binary
 - [Phase 03-04]: pre_model_hook added to build_agent — OpenAI API rejects images in role:tool messages; langchain-mcp-adapters places browser_take_screenshot results in ToolMessages; hook lifts image content to preceding HumanMessage before each LLM call
+- [Phase 04-01]: run_store imported by reference in api/stream.py from api.search — both modules share same dict instance without shared state layer
+- [Phase 04-01]: _final_text accumulated from on_chat_model_stream chunks — only way to get agent's final JSON output from astream_events v2 (no on_agent_finish event)
+- [Phase 04-01]: partial flag derived from bot_detected JSON field before parse_listings_from_message call — best-effort parse, stays False on failure
+- [Phase 04-01]: asyncio.wait_for(timeout=15) for keep-alive pings — prevents queue.get() blocking indefinitely without a separate ping task
 
 ### Pending Todos
 
@@ -86,5 +91,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 03-langgraph-agent-04-PLAN.md — integration smoke test verified end-to-end; 17 listings returned; Phase 3 COMPLETE; ready for Phase 4 SSE Streaming API
+Stopped at: Completed 04-sse-streaming-api-01-PLAN.md — api/search.py (POST /search) and api/stream.py (GET /stream/{run_id}) created; imports verified in conda env; ready for Plan 02 (main.py integration)
 Resume file: None

@@ -22,10 +22,10 @@
 
 ### API
 
-- [ ] **API-01**: `POST /search` endpoint accepts a natural-language query, stores it, and returns a `run_id`
-- [ ] **API-02**: `GET /stream/{run_id}` endpoint returns a Server-Sent Events stream for the agent run
-- [ ] **API-03**: SSE stream emits typed events: `thinking` (LLM tokens), `tool_call` (tool invoked), `tool_result` (tool returned), `complete` (final listings), `error` (failure)
-- [ ] **API-04**: SSE generator detects client disconnect and terminates the agent run to prevent resource leaks
+- [x] **API-01**: `POST /search` endpoint accepts a natural-language query, stores it, and returns a `run_id`
+- [x] **API-02**: `GET /stream/{run_id}` endpoint returns a Server-Sent Events stream for the agent run
+- [x] **API-03**: SSE stream emits typed events: `thinking` (LLM tokens), `tool_call` (tool invoked), `tool_result` (tool returned), `complete` (final listings), `error` (failure)
+- [x] **API-04**: SSE generator detects client disconnect and terminates the agent run to prevent resource leaks
 - [ ] **API-05**: CORS is configured to allow browser `EventSource` connections
 
 ### Frontend
@@ -79,10 +79,10 @@
 | SCRP-03 | Phase 3 | Complete |
 | SCRP-04 | Phase 3 | Complete |
 | SCRP-05 | Phase 3 | Complete |
-| API-01 | Phase 4 | Pending |
-| API-02 | Phase 4 | Pending |
-| API-03 | Phase 4 | Pending |
-| API-04 | Phase 4 | Pending |
+| API-01 | Phase 4 | Complete |
+| API-02 | Phase 4 | Complete |
+| API-03 | Phase 4 | Complete |
+| API-04 | Phase 4 | Complete |
 | API-05 | Phase 4 | Pending |
 | FRNT-02 | Phase 5 | Pending |
 | FRNT-03 | Phase 5 | Pending |
