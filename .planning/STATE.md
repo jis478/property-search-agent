@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Agent autonomously navigates domain.com.au and returns structured property listings — browser automation must work reliably and results must appear in the UI
-**Current focus:** Phase 2 — MCP Integration (complete, both plans done)
+**Current focus:** Phase 3 — LangGraph Agent (in progress)
 
 ## Current Position
 
-Phase: 2 of 5 (MCP Integration)
-Plan: 2 of 2 in current phase
-Status: Phase 2 complete — ready for Phase 3
-Last activity: 2026-02-20 — Phase 2 Plan 02 completed
+Phase: 3 of 5 (LangGraph Agent)
+Plan: 2 of 4 in current phase (Plans 01 and 02 complete)
+Status: Phase 3 in progress — Plans 01 and 02 done, Plans 03 and 04 remaining
+Last activity: 2026-02-28 — Phase 3 Plan 02 completed
 
-Progress: [████░░░░░░] 40%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 14 min
-- Total execution time: 0.70 hours
+- Total plans completed: 5
+- Average duration: 9 min
+- Total execution time: 0.74 hours
 
 **By Phase:**
 
@@ -29,10 +29,11 @@ Progress: [████░░░░░░] 40%
 |-------|-------|-------|----------|
 | 01-foundation | 1 | 10 min | 10 min |
 | 02-mcp-integration | 2 | 32 min | 16 min |
+| 03-langgraph-agent (partial) | 2 | 4 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 14 min avg
-- Trend: stable (Plan 02 was fast at 2 min — hermetic test suite)
+- Last 5 plans: 9 min avg
+- Trend: Phase 3 plans fast (infrastructure only — no tests)
 
 *Updated after each plan completion*
 
@@ -56,6 +57,11 @@ Recent decisions affecting current work:
 - [02-01]: Crash restart counter resets on successful restart — 3 attempts per crash event, not lifetime-capped
 - [Phase 02-mcp-integration]: Patch at main.MCPManager (not mcp_subprocess.manager.MCPManager) — monkeypatch replaces name at lifespan call site
 - [Phase 02-mcp-integration]: Patch MCP_STARTUP_TIMEOUT to 0.05s in timeout test — fast without removing timeout branch coverage
+- [Phase 03-02]: langgraph 1.0.10 installed (>=1.0.9 satisfied); openai upgraded 2.17.0->2.24.0 as transitive dep
+- [Phase 03-02]: SYSTEM_PROMPT explicitly restricts to 3 tools only; bot_detected flag in JSON output enables typed BotDetectedError raising in parser
+- [Phase 03-langgraph-agent]: Deferred import of BotDetectedError inside parse_listings_from_message body — avoids ImportError when Plan 02 not yet committed
+- [Phase 03-langgraph-agent]: Partial-results contract: bot_detected=True + non-empty listings returns data (not raises) — per CONTEXT.md locked decision
+- [Phase 03-langgraph-agent]: price field is str|None (not float) — preserves display format like dollar-450-pw or Price-on-application
 
 ### Pending Todos
 
@@ -70,6 +76,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-20
-Stopped at: Completed 02-mcp-integration-02-PLAN.md — Phase 2 fully complete (both plans done), ready for Phase 3
+Last session: 2026-02-28
+Stopped at: Completed 03-langgraph-agent-02-PLAN.md — exceptions, prompts, langgraph+langchain-openai installed
 Resume file: None

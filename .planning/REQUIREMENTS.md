@@ -7,18 +7,18 @@
 
 ### Agent Core
 
-- [ ] **AGNT-01**: Agent runs as a LangGraph ReAct graph using OpenAI GPT-4o as the LLM
-- [ ] **AGNT-02**: Agent extracts search parameters (suburb, price range, bedrooms, property type) from natural-language user input
-- [ ] **AGNT-03**: Agent constructs domain.com.au search URLs from extracted parameters (not form interaction)
-- [ ] **AGNT-04**: Agent enforces a recursion limit of 10 steps to prevent runaway LLM loops on tool failures or bot-blocked pages
+- [x] **AGNT-01**: Agent runs as a LangGraph ReAct graph using OpenAI GPT-4o as the LLM
+- [x] **AGNT-02**: Agent extracts search parameters (suburb, price range, bedrooms, property type) from natural-language user input
+- [x] **AGNT-03**: Agent constructs domain.com.au search URLs from extracted parameters (not form interaction)
+- [x] **AGNT-04**: Agent enforces a recursion limit of 10 steps to prevent runaway LLM loops on tool failures or bot-blocked pages
 
 ### Scraping
 
 - [x] **SCRP-01**: Playwright MCP server (`@playwright/mcp`) spawns as a subprocess at FastAPI startup and is cleanly shut down at FastAPI shutdown
 - [ ] **SCRP-02**: Agent navigates domain.com.au search results pages via Playwright MCP tools
-- [ ] **SCRP-03**: Agent extracts the following fields for each listing: address, price, bedrooms, bathrooms, property type, and listing URL
-- [ ] **SCRP-04**: Agent detects bot-challenged pages (Cloudflare/challenge title or minimal content) and handles gracefully rather than passing garbage to the LLM
-- [ ] **SCRP-05**: Agent aggregates results across up to 3 pages of search results (~75 listings maximum)
+- [x] **SCRP-03**: Agent extracts the following fields for each listing: address, price, bedrooms, bathrooms, property type, and listing URL
+- [x] **SCRP-04**: Agent detects bot-challenged pages (Cloudflare/challenge title or minimal content) and handles gracefully rather than passing garbage to the LLM
+- [x] **SCRP-05**: Agent aggregates results across up to 3 pages of search results (~75 listings maximum)
 
 ### API
 
@@ -71,14 +71,14 @@
 |-------------|-------|--------|
 | FRNT-01 | Phase 1 | Complete (2026-02-19) |
 | SCRP-01 | Phase 2 | Complete |
-| AGNT-01 | Phase 3 | Pending |
-| AGNT-02 | Phase 3 | Pending |
-| AGNT-03 | Phase 3 | Pending |
-| AGNT-04 | Phase 3 | Pending |
+| AGNT-01 | Phase 3 | Complete |
+| AGNT-02 | Phase 3 | Complete |
+| AGNT-03 | Phase 3 | Complete |
+| AGNT-04 | Phase 3 | Complete |
 | SCRP-02 | Phase 3 | Pending |
-| SCRP-03 | Phase 3 | Pending |
-| SCRP-04 | Phase 3 | Pending |
-| SCRP-05 | Phase 3 | Pending |
+| SCRP-03 | Phase 3 | Complete |
+| SCRP-04 | Phase 3 | Complete |
+| SCRP-05 | Phase 3 | Complete |
 | API-01 | Phase 4 | Pending |
 | API-02 | Phase 4 | Pending |
 | API-03 | Phase 4 | Pending |
