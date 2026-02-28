@@ -76,7 +76,12 @@ Plans:
   2. `GET /stream/{run_id}` returns a valid SSE stream that emits `thinking`, `tool_call`, `tool_result`, `complete`, and `error` typed events
   3. Closing the browser tab (or `curl --max-time`) stops the agent run — no resource leak from abandoned streams
   4. An `EventSource` connection from a browser on a different port succeeds (CORS does not block it)
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — api/search.py + api/stream.py: run store, POST /search, background agent task, SSE generator, disconnect cleanup
+- [ ] 04-02-PLAN.md — main.py wiring: CORSMiddleware + router inclusion + build_agent in lifespan; unit tests for both endpoints
+- [ ] 04-03-PLAN.md — Human verification checkpoint: end-to-end curl SSE test against live server
 
 ### Phase 5: Frontend
 **Goal**: The single-page UI is fully wired to the SSE API — a user types a query, watches live agent steps appear, and sees structured listing cards on completion
@@ -99,5 +104,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Foundation | 1/1 | Complete | 2026-02-19 |
 | 2. MCP Integration | 1/2 | In Progress|  |
 | 3. LangGraph Agent | 4/4 | Complete | 2026-02-28 |
-| 4. SSE Streaming API | 0/TBD | Not started | - |
+| 4. SSE Streaming API | 0/3 | Not started | - |
 | 5. Frontend | 0/TBD | Not started | - |
