@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 ## Current Position
 
 Phase: 4 of 5 (SSE Streaming API)
-Plan: 1 of 3 in current phase (Plan 01 complete)
-Status: Phase 4 in progress — Plan 01 done (search.py + stream.py route modules); Plans 02 and 03 pending
-Last activity: 2026-02-28 — Phase 4 Plan 01 completed (api/search.py POST /search, api/stream.py GET /stream/{run_id})
+Plan: 2 of 3 in current phase (Plans 01 and 02 complete)
+Status: Phase 4 in progress — Plans 01 and 02 done (route modules + main.py integration + unit tests); Plan 03 pending
+Last activity: 2026-03-01 — Phase 4 Plan 02 completed (main.py CORS/agent/router wiring; test_api_search.py + test_api_stream.py; 46 tests passing)
 
 Progress: [████████░░] 77%
 
@@ -38,6 +38,7 @@ Progress: [████████░░] 77%
 *Updated after each plan completion*
 | Phase 03-langgraph-agent P04 | ~30 min | 2 tasks | 3 files |
 | Phase 04-sse-streaming-api P01 | 2 min | 2 tasks | 2 files |
+| Phase 04-sse-streaming-api P02 | 8 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - [Phase 04-01]: _final_text accumulated from on_chat_model_stream chunks — only way to get agent's final JSON output from astream_events v2 (no on_agent_finish event)
 - [Phase 04-01]: partial flag derived from bot_detected JSON field before parse_listings_from_message call — best-effort parse, stays False on failure
 - [Phase 04-01]: asyncio.wait_for(timeout=15) for keep-alive pings — prevents queue.get() blocking indefinitely without a separate ping task
+- [Phase 04-sse-streaming-api]: mock_agent fixture required in all test_main.py tests: lifespan now calls build_agent which creates ChatOpenAI requiring OPENAI_API_KEY; monkeypatching main.build_agent prevents regression
+- [Phase 04-sse-streaming-api]: TestClient.get() does not accept stream=True kwarg; dropped from test_api_stream.py — buffered response sufficient for SSE content-type and body assertions
 
 ### Pending Todos
 
@@ -90,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-28
-Stopped at: Completed 04-sse-streaming-api-01-PLAN.md — api/search.py (POST /search) and api/stream.py (GET /stream/{run_id}) created; imports verified in conda env; ready for Plan 02 (main.py integration)
+Last session: 2026-03-01
+Stopped at: Completed 04-sse-streaming-api-02-PLAN.md — main.py updated with CORSMiddleware, build_agent lifespan, router inclusion; test_api_search.py and test_api_stream.py created; all 46 tests pass; ready for Plan 03 (end-to-end SSE tests)
 Resume file: None

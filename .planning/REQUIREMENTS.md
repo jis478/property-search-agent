@@ -26,7 +26,7 @@
 - [x] **API-02**: `GET /stream/{run_id}` endpoint returns a Server-Sent Events stream for the agent run
 - [x] **API-03**: SSE stream emits typed events: `thinking` (LLM tokens), `tool_call` (tool invoked), `tool_result` (tool returned), `complete` (final listings), `error` (failure)
 - [x] **API-04**: SSE generator detects client disconnect and terminates the agent run to prevent resource leaks
-- [ ] **API-05**: CORS is configured to allow browser `EventSource` connections
+- [x] **API-05**: CORS is configured to allow browser `EventSource` connections
 
 ### Frontend
 
@@ -83,7 +83,7 @@
 | API-02 | Phase 4 | Complete |
 | API-03 | Phase 4 | Complete |
 | API-04 | Phase 4 | Complete |
-| API-05 | Phase 4 | Pending |
+| API-05 | Phase 4 | Complete |
 | FRNT-02 | Phase 5 | Pending |
 | FRNT-03 | Phase 5 | Pending |
 | FRNT-04 | Phase 5 | Pending |
