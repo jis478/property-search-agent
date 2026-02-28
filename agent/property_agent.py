@@ -18,6 +18,7 @@ Error contract:
 """
 from langgraph.prebuilt import create_react_agent
 from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, ToolMessage
 
 from agent.prompts import SYSTEM_PROMPT
 
@@ -33,6 +34,33 @@ REQUIRED_TOOLS = {"browser_navigate", "browser_take_screenshot", "browser_wait_f
 # refers to browser tool calls, not total supersteps. 15 supersteps gives
 # room for three full pages without triggering the limit on a clean run.
 _RECURSION_LIMIT = 15
+
+
+def _move_tool_images_to_user(state: dict) -> dict:
+    """OpenAI only allows images in 'user' role messages, not 'tool' messages.
+
+    langchain-mcp-adapters puts browser_take_screenshot results (images) inside
+    ToolMessages. This pre_model_hook lifts those image blocks out into a following
+    HumanMessage so GPT-4o can see them without the API rejecting the request.
+
+    pre_model_hook signature: takes state dict, returns dict with 'llm_input_messages'.
+    """
+    messages = state.get("messages", [])
+    result = []
+    for msg in messages:
+        if isinstance(msg, ToolMessage) and isinstance(msg.content, list):
+            image_blocks = [b for b in msg.content if isinstance(b, dict) and b.get("type") == "image"]
+            text_blocks = [b for b in msg.content if not (isinstance(b, dict) and b.get("type") == "image")]
+            if image_blocks:
+                result.append(ToolMessage(
+                    content=text_blocks if text_blocks else "Screenshot taken.",
+                    tool_call_id=msg.tool_call_id,
+                    name=msg.name,
+                ))
+                result.append(HumanMessage(content=image_blocks))
+                continue
+        result.append(msg)
+    return {"llm_input_messages": result}
 
 
 def build_agent(mcp_tools: list):
@@ -56,6 +84,7 @@ def build_agent(mcp_tools: list):
         model=llm,
         tools=agent_tools,
         prompt=SYSTEM_PROMPT,
+        pre_model_hook=_move_tool_images_to_user,
     )
 
 

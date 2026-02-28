@@ -50,6 +50,7 @@ class MCPManager:
                     "command": "npx",
                     "args": [
                         "@playwright/mcp",
+                        "--browser", "chromium",  # use playwright-managed Chromium (not system Chrome)
                         "--headless",    # required: WSL2 has no display server
                         "--no-sandbox",  # required: WSL2 kernel lacks Chrome sandbox
                         "--isolated",    # in-memory profile; no disk state between restarts
