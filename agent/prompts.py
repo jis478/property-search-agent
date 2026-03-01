@@ -16,22 +16,25 @@ You will receive a domain.com.au search URL. Scrape 3 pages of search results us
 **For each page (page 1, page 2, page 3):**
 1. Call browser_navigate with the page URL
    - Page 1: use the URL as given
-   - Page 2: append `?page=2` to the base URL (e.g., https://www.domain.com.au/rent/suburb/?page=2)
-   - Page 3: append `?page=3` to the base URL (e.g., https://www.domain.com.au/rent/suburb/?page=3)
+   - Page 2: set the page parameter to 2. If the URL has `page=1`, replace it with `page=2`. If no page param exists, append `&page=2`.
+   - Page 3: set the page parameter to 3 in the same way.
 2. Call browser_wait_for to wait 2 seconds for content to load
 3. Call browser_take_screenshot to capture the page
 4. Visually examine the screenshot and extract all visible property listings
 
-## Bot Detection
+## When You Cannot See Listings
 
-If the screenshot shows a CAPTCHA widget, "Verify you are human" text, "Please verify" text, or no property listing cards at all (challenge page), immediately stop and output:
-{"bot_detected": true, "listings": []}
+If a screenshot shows ANY of the following — stop immediately and output `{"bot_detected": true, "listings": []}`:
+- A CAPTCHA widget or puzzle
+- "Verify you are human", "Please verify", "I am not a robot", or similar text
+- A Cloudflare or security challenge page
+- No property listing cards visible at all (blank content area, error page, or access denied)
 
-Do not attempt to scrape further pages if bot detection is triggered.
+Do not attempt to scrape further pages if you trigger this condition.
 
 ## Listing Extraction
 
-For each visible property listing, extract:
+For each visible property listing card, extract:
 - address: full street address (e.g., "12 Smith Street, Richmond VIC 3121")
 - listing_url: the URL of the individual listing if visible or determinable, otherwise null
 - price: price as displayed text (e.g., "$450 pw", "$1,200 per week") or null if not shown
@@ -39,20 +42,24 @@ For each visible property listing, extract:
 - bathrooms: number of bathrooms as an integer, or null if not shown
 - property_type: property type such as "house", "apartment", "townhouse", "unit", "studio", etc., or null if not determinable
 
-Include a listing if at least the address is visible. You may set other fields to null if they are not visible.
+Include a listing if at least the address is visible. You may set other fields to null.
 
 ## Final Output
 
-After scraping all 3 pages (or stopping on bot detection), output a single JSON object as your FINAL message — not as a tool call:
+CRITICAL: Your final message MUST be a single JSON object. Do NOT output plain English as your final message.
+
+After scraping all 3 pages (or stopping on bot detection), output ONLY this JSON:
 
 {"bot_detected": false, "listings": [{"address": "...", "listing_url": "...", "price": "...", "bedrooms": 2, "bathrooms": 1, "property_type": "apartment"}, ...]}
 
-Combine all listings from all 3 pages into the single "listings" array.
+Combine all listings from all pages into the single "listings" array.
+
+If a page fails to load or you cannot extract listings from it, continue to the next page and include whatever listings you have collected so far in the final JSON. Never output explanatory text — always output JSON.
 
 ## Step Budget
 
-You have a limited number of steps. Work efficiently:
-- navigate → wait → screenshot → (move to next page)
+Work efficiently:
+- navigate → wait → screenshot → extract → move to next page
 - Do not repeat pages, do not scroll, do not click
 - After completing all 3 pages, output your JSON immediately
 """

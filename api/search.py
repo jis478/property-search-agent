@@ -143,9 +143,23 @@ async def run_agent(run_id: str, agent, query: str) -> None:
                 chunk = event["data"].get("chunk")
                 if chunk and chunk.content:
                     await queue.put(make_thinking(chunk.content))
-                    # Accumulate full LLM text for post-loop listing extraction
-                    run.setdefault("_final_text", "")
-                    run["_final_text"] += chunk.content if isinstance(chunk.content, str) else ""
+            elif kind == "on_chat_model_end":
+                # Overwrite (not append) with each complete LLM response so that
+                # _final_text always holds the LAST LLM message — the JSON output.
+                # Accumulating stream chunks concatenates all LLM calls including
+                # intermediate reasoning, which breaks the JSON parser.
+                output = event["data"].get("output")
+                if output and output.content:
+                    content = output.content
+                    if isinstance(content, str):
+                        run["_final_text"] = content
+                    elif isinstance(content, list):
+                        texts = [
+                            b["text"]
+                            for b in content
+                            if isinstance(b, dict) and b.get("type") == "text" and "text" in b
+                        ]
+                        run["_final_text"] = "\n".join(texts)
             elif kind == "on_tool_start":
                 name = event["name"]
                 args = event["data"].get("input", {}) or {}
@@ -155,8 +169,8 @@ async def run_agent(run_id: str, agent, query: str) -> None:
                 output = event["data"].get("output")
                 await queue.put(make_tool_result(name, output, None))
 
-        # Parse listings from accumulated LLM text after astream_events exhaustion.
-        # _final_text is populated during on_chat_model_stream handling above.
+        # Parse listings from the last complete LLM response after astream_events exhaustion.
+        # _final_text is set by on_chat_model_end (overwrites on each LLM call).
         from agent.url_builder import parse_listings_from_message
 
         import json as _json
@@ -175,6 +189,11 @@ async def run_agent(run_id: str, agent, query: str) -> None:
             except Exception:
                 pass  # best-effort JSON check; partial stays False if parse fails
         listings = parse_listings_from_message(final_text) if final_text else []
+        # If the agent output plain English instead of JSON (no "listings" key found),
+        # treat it as a BotDetectedError — domain.com.au likely blocked the scrape.
+        if not listings and final_text and '"listings"' not in final_text:
+            from agent.exceptions import BotDetectedError
+            raise BotDetectedError("Agent could not extract listings from domain.com.au screenshots.")
         run["status"] = "complete"
         await queue.put(make_complete(run_id, listings, partial=partial))
     except asyncio.CancelledError:

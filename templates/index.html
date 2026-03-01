@@ -5,11 +5,290 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Property Search</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: { 'fade-in': 'fadeIn 0.4s ease-out forwards' },
+                    keyframes: {
+                        fadeIn: {
+                            '0%':   { opacity: '0', transform: 'translateY(8px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                    },
+                },
+            },
+        };
+    </script>
 </head>
-<body class="bg-gray-50">
-    <div class="container mx-auto p-8">
-        <h1 class="text-2xl font-bold">Property Search</h1>
-        <p>Application loading...</p>
-    </div>
+<body class="bg-gray-50 min-h-screen">
+
+    <header class="bg-white border-b border-gray-200 px-4 py-4">
+        <div class="max-w-3xl mx-auto">
+            <h1 class="text-xl font-bold text-green-600">Property Search</h1>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-8 space-y-6">
+
+        <form id="search-form" class="flex gap-2">
+            <input
+                id="query-input"
+                type="text"
+                placeholder="e.g. 2 bedroom apartment in Richmond VIC under $600 per week"
+                class="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            <button
+                id="search-button"
+                type="submit"
+                class="flex items-center gap-2 bg-green-600 text-white rounded-lg px-5 py-3 font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+                <span id="spinner" class="hidden">⟳</span>
+                Search
+            </button>
+        </form>
+
+        <div id="banner" class="hidden rounded-lg bg-green-50 border border-green-200 px-4 py-3 flex items-center gap-3 animate-pulse">
+            <span id="banner-text" class="text-green-700 text-sm font-medium"></span>
+        </div>
+
+        <div id="step-log" class="hidden bg-white rounded-lg border border-gray-100 px-4 py-3 max-h-64 overflow-y-auto space-y-0.5 font-mono text-sm text-gray-700"></div>
+
+        <div id="error-banner" class="hidden rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-red-700 text-sm"></div>
+
+    </main>
+
+    <section id="results-section" class="hidden max-w-7xl mx-auto px-4 pb-12 space-y-4">
+        <div id="results-warning" class="hidden rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-amber-700 text-sm"></div>
+        <div id="card-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+        <div id="no-results" class="hidden text-center text-gray-500 py-12 text-base">No listings found. Try broadening your search.</div>
+    </section>
+
+    <script>
+        // ── DOM references ────────────────────────────────────────────────────
+        const form           = document.getElementById('search-form');
+        const queryInput     = document.getElementById('query-input');
+        const searchBtn      = document.getElementById('search-button');
+        const spinner        = document.getElementById('spinner');
+        const banner         = document.getElementById('banner');
+        const bannerText     = document.getElementById('banner-text');
+        const stepLog        = document.getElementById('step-log');
+        const errorBanner    = document.getElementById('error-banner');
+        const resultsSection = document.getElementById('results-section');
+        const resultsWarning = document.getElementById('results-warning');
+        const cardGrid       = document.getElementById('card-grid');
+        const noResults      = document.getElementById('no-results');
+
+        // ── Module-level state ────────────────────────────────────────────────
+        let currentEs  = null;   // active EventSource, or null
+        let lastStepEl = null;   // most recent tool_call DOM element
+
+        // ── Helpers ───────────────────────────────────────────────────────────
+        function esc(str) {
+            return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function safeUrl(url) {
+            if (!url) return null;
+            return String(url).startsWith('https://') ? url : null;
+        }
+
+        // ── State machine ─────────────────────────────────────────────────────
+        function setSearching(query) {
+            queryInput.disabled = true;
+            searchBtn.disabled  = true;
+            spinner.classList.remove('hidden');
+            bannerText.textContent = 'Searching for: "' + query + '"';
+            banner.classList.remove('hidden');
+            stepLog.innerHTML = '';
+            stepLog.classList.remove('hidden');
+            errorBanner.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+        }
+
+        function setIdle() {
+            queryInput.disabled = false;
+            searchBtn.disabled  = false;
+            spinner.classList.add('hidden');
+            banner.classList.add('hidden');
+            stepLog.classList.add('hidden');
+        }
+
+        function showError(msg) {
+            errorBanner.textContent = msg;
+            errorBanner.classList.remove('hidden');
+            setIdle();
+        }
+
+        // ── Step log ──────────────────────────────────────────────────────────
+        const TOOL_ICONS = {
+            browser_navigate:       '🔍 ',
+            browser_take_screenshot:'📸 ',
+            browser_wait_for:       '⏳ ',
+        };
+
+        function appendStepLine(tool, label) {
+            const el  = document.createElement('div');
+            el.className = 'flex items-center gap-1.5 py-0.5';
+            const icon = TOOL_ICONS[tool] ?? '• ';
+            el.textContent = icon + (label ?? tool);
+            stepLog.appendChild(el);
+            stepLog.scrollTop = stepLog.scrollHeight;
+            lastStepEl = el;
+        }
+
+        function appendTickToPreviousLine(success) {
+            if (!lastStepEl) return;
+            const tick = document.createElement('span');
+            tick.textContent = success ? ' ✓' : ' ✗';
+            tick.className   = success ? 'text-green-600' : 'text-red-500';
+            lastStepEl.appendChild(tick);
+        }
+
+        // ── Error messages ────────────────────────────────────────────────────
+        const ERROR_MESSAGES = {
+            BotDetectedError: 'Domain.com.au blocked the search. Try again in a moment.',
+            StepLimitError:   'The search took too long. Try a more specific query.',
+            MCPError:         'Something went wrong. Check the server is running.',
+            UnknownError:     'Something went wrong. Check the server is running.',
+            connection:       'Lost connection to the server. Please try again.',
+            conflict:         'A search is already in progress. Please wait.',
+        };
+
+        // ── Card rendering ────────────────────────────────────────────────────
+        function buildCardHTML(listing) {
+            const price = listing.price
+                ? `<p class="text-green-600 text-lg font-semibold">${esc(listing.price)}</p>`
+                : `<p class="text-gray-400 text-sm italic">Price on application</p>`;
+
+            const metaParts = [];
+            if (listing.bedrooms  != null) metaParts.push(`${esc(String(listing.bedrooms))} bed`);
+            if (listing.bathrooms != null) metaParts.push(`${esc(String(listing.bathrooms))} bath`);
+            if (listing.property_type)     metaParts.push(esc(listing.property_type));
+            const meta = metaParts.length
+                ? `<p class="text-sm text-gray-500">${metaParts.join(' · ')}</p>`
+                : '';
+
+            const url = safeUrl(listing.listing_url);
+            const cta = url
+                ? `<a href="${url}" target="_blank" rel="noopener noreferrer"
+                      class="mt-auto block text-center border border-green-600 text-green-600
+                             rounded-lg px-3 py-2 text-sm font-medium hover:bg-green-50 transition-colors">
+                      View on Domain &rarr;</a>`
+                : '';
+
+            return `
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4
+                            flex flex-col gap-2 animate-fade-in">
+                    <p class="font-semibold text-gray-900 leading-snug">${esc(listing.address)}</p>
+                    ${price}
+                    ${meta}
+                    ${cta}
+                </div>`;
+        }
+
+        function renderResults(data) {
+            banner.classList.add('hidden');
+            stepLog.classList.add('hidden');
+            setIdle();
+            resultsSection.classList.remove('hidden');
+            cardGrid.innerHTML = '';
+            noResults.classList.add('hidden');
+            resultsWarning.classList.add('hidden');
+
+            if (data.partial === true) {
+                resultsWarning.textContent = 'Some results may be incomplete — Domain.com.au may have partially blocked the search.';
+                resultsWarning.classList.remove('hidden');
+            }
+
+            if (data.count === 0 || !data.listings || data.listings.length === 0) {
+                cardGrid.classList.add('hidden');
+                noResults.classList.remove('hidden');
+                return;
+            }
+
+            cardGrid.classList.remove('hidden');
+            for (const listing of data.listings) {
+                cardGrid.insertAdjacentHTML('beforeend', buildCardHTML(listing));
+            }
+        }
+
+        // ── Submit handler ────────────────────────────────────────────────────
+        async function handleSubmit(event) {
+            event.preventDefault();
+            const query = queryInput.value.trim();
+            if (!query) return;
+
+            if (currentEs) {
+                currentEs.close();
+                currentEs = null;
+            }
+
+            setSearching(query);
+
+            try {
+                const res = await fetch('/search', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ query }),
+                });
+
+                if (!res.ok) {
+                    const msg = res.status === 409
+                        ? ERROR_MESSAGES.conflict
+                        : ERROR_MESSAGES.UnknownError;
+                    showError(msg);
+                    return;
+                }
+
+                const { run_id } = await res.json();
+
+                currentEs = new EventSource('/stream/' + run_id);
+
+                currentEs.addEventListener('tool_call', (e) => {
+                    const d = JSON.parse(e.data);
+                    appendStepLine(d.tool, d.label);
+                });
+
+                currentEs.addEventListener('tool_result', (e) => {
+                    const d = JSON.parse(e.data);
+                    appendTickToPreviousLine(d.success);
+                });
+
+                currentEs.addEventListener('complete', (e) => {
+                    currentEs.close();
+                    currentEs = null;
+                    const d = JSON.parse(e.data);
+                    renderResults(d);
+                });
+
+                currentEs.addEventListener('error', (e) => {
+                    if (!currentEs) return;
+                    currentEs.close();
+                    currentEs = null;
+                    try {
+                        const d = JSON.parse(e.data);
+                        showError(ERROR_MESSAGES[d.error_type] ?? ERROR_MESSAGES.UnknownError);
+                    } catch {
+                        showError(ERROR_MESSAGES.UnknownError);
+                    }
+                });
+
+                currentEs.onerror = () => {
+                    if (currentEs) {
+                        currentEs.close();
+                        currentEs = null;
+                        showError(ERROR_MESSAGES.connection);
+                    }
+                };
+
+            } catch {
+                showError(ERROR_MESSAGES.connection);
+            }
+        }
+
+        form.addEventListener('submit', handleSubmit);
+    </script>
+
 </body>
 </html>
