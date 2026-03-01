@@ -7,6 +7,7 @@ event dicts stored on an asyncio.Queue for the /stream/{run_id} consumer.
 import asyncio
 import json
 import logging
+import re
 import uuid
 from typing import Any
 
@@ -29,10 +30,18 @@ _current_run_id: str | None = None
 # Tool label map
 # ---------------------------------------------------------------------------
 
+def _navigate_label(args: dict) -> str:
+    url = args.get("url", "")
+    m = re.search(r"[?&]page=(\d+)", url)
+    page = f" — page {m.group(1)}" if m else ""
+    return f"Opening results{page}"
+
+
 TOOL_LABELS = {
-    "browser_navigate": lambda args: f"Navigating to {args.get('url', '?')}",
-    "browser_take_screenshot": lambda args: "Taking screenshot",
-    "browser_wait_for": lambda args: "Waiting for page",
+    "browser_navigate":       _navigate_label,
+    "browser_wait_for":       lambda args: "Waiting for page to load",
+    "browser_get_text":       lambda args: "Reading listings",
+    "browser_take_screenshot": lambda args: "Checking for bot detection",
 }
 
 # ---------------------------------------------------------------------------
