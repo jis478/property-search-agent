@@ -92,7 +92,11 @@ Plans:
   2. While the agent runs, a live step log updates in real time showing plain-English tool labels and the URL being navigated
   3. When the agent completes, property listing cards appear showing address, price, bedrooms, bathrooms, property type, and a clickable link to the domain.com.au listing page
   4. When the agent fails (bot detection, timeout, or zero results), the page displays a friendly human-readable error message instead of a blank state or raw JSON
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — HTML skeleton, Tailwind config, search form wiring, interpretation banner, live step log, two-call SSE integration
+- [ ] 05-02-PLAN.md — Listing card grid, error/empty states, human verification checkpoint
 
 ## Progress
 
@@ -105,4 +109,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. MCP Integration | 1/2 | In Progress|  |
 | 3. LangGraph Agent | 4/4 | Complete | 2026-02-28 |
 | 4. SSE Streaming API | 0/3 | Not started | - |
-| 5. Frontend | 0/TBD | Not started | - |
+| 5. Frontend | 0/2 | Not started | - |
