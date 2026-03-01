@@ -192,6 +192,10 @@ class TestPropertyListingModel:
         assert listing.price == "$600/week"
         assert listing.property_type == "house"
 
+    def test_is_valid_returns_true_when_address_present(self):
+        listing = PropertyListing(address="12 Cedar Rd, Ivanhoe VIC")
+        assert listing.is_valid() is True
+
     def test_is_valid_returns_true_when_address_and_url_present(self):
         listing = PropertyListing(
             address="12 Cedar Rd, Ivanhoe VIC",
@@ -203,6 +207,21 @@ class TestPropertyListingModel:
         listing = PropertyListing(address="", listing_url="https://www.domain.com.au/13")
         assert listing.is_valid() is False
 
-    def test_is_valid_returns_false_when_url_empty(self):
-        listing = PropertyListing(address="13 Wattle St, Preston VIC", listing_url="")
-        assert listing.is_valid() is False
+    def test_is_valid_returns_true_when_url_null(self):
+        """listing_url=None is allowed; only address is required for validity."""
+        listing = PropertyListing(address="13 Wattle St, Preston VIC", listing_url=None)
+        assert listing.is_valid() is True
+
+    def test_listing_with_null_url_included_in_results(self):
+        """Listings where the agent outputs listing_url=null are kept."""
+        data = {
+            "bot_detected": False,
+            "listings": [
+                {"address": "14 River Rd, RICHMOND", "listing_url": None, "price": "$550 per week", "bedrooms": 2},
+            ],
+        }
+        import json
+        result = parse_listings_from_message(json.dumps(data))
+        assert len(result) == 1
+        assert result[0].address == "14 River Rd, RICHMOND"
+        assert result[0].listing_url is None

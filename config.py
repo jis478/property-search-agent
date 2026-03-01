@@ -8,11 +8,11 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # Stubbed for later phases — all optional in Phase 1
-    openai_api_key: str = ""
-    langfuse_public_key: str = ""
-    langfuse_secret_key: str = ""
-    langfuse_host: str = "https://cloud.langfuse.com"
+    # # Stubbed for later phases — all optional in Phase 1
+    # openai_api_key: str = ""
+    # langfuse_public_key: str = ""
+    # langfuse_secret_key: str = ""
+    # langfuse_host: str = "https://cloud.langfuse.com"
 
 
 settings = Settings()

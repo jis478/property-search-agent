@@ -1,10 +1,11 @@
-"""MCPManager: manages the @playwright/mcp Node.js subprocess lifecycle."""
+"""MCPManager: manages the Python Playwright MCP subprocess lifecycle."""
 
 import asyncio
 import logging
 import os
 import signal
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -20,7 +21,7 @@ MAX_RESTART_ATTEMPTS = 3
 
 class MCPManager:
     """
-    Manages the @playwright/mcp subprocess lifecycle.
+    Manages the Python Playwright MCP subprocess lifecycle.
 
     Usage (in FastAPI lifespan):
         manager = MCPManager()
@@ -42,40 +43,36 @@ class MCPManager:
     # ------------------------------------------------------------------
 
     def _make_client(self) -> MultiServerMCPClient:
-        """Construct a MultiServerMCPClient for the playwright MCP server."""
+        """Construct a MultiServerMCPClient for the Python Playwright MCP server."""
+        server_script = str(Path(__file__).parent.parent / "playwright_mcp_server.py")
         return MultiServerMCPClient(
             connections={
                 "playwright": {
                     "transport": "stdio",
-                    "command": "npx",
-                    "args": [
-                        "@playwright/mcp",
-                        "--browser", "chromium",  # use playwright-managed Chromium (not system Chrome)
-                        "--headless",    # required: WSL2 has no display server
-                        "--no-sandbox",  # required: WSL2 kernel lacks Chrome sandbox
-                        "--isolated",    # in-memory profile; no disk state between restarts
-                    ],
+                    "command": sys.executable,
+                    "args": [server_script],
                 }
             }
         )
 
     async def _ensure_chromium(self) -> None:
         """
-        Check whether the Playwright Chromium binary is present.
-        If not, run 'npx playwright install chromium' to download it.
+        Check whether the Python Playwright Chromium binary is present.
+        If not, run 'python -m playwright install chromium' to download it.
         This is a one-time ~100MB download on first startup.
         """
         ms_playwright = Path.home() / ".cache" / "ms-playwright"
-        chromium_dirs = list(ms_playwright.glob("chromium-*/chrome-linux/chrome"))
+        chromium_dirs = list(ms_playwright.glob("chromium-*/chrome-linux*/chrome"))
         if chromium_dirs:
             return  # already installed
 
         logger.warning(
-            "Chromium not found — downloading via 'npx playwright install chromium' "
+            "Chromium not found — downloading via 'python -m playwright install chromium' "
             "(this may take a minute on first run)"
         )
         proc = await asyncio.create_subprocess_exec(
-            "npx",
+            sys.executable,
+            "-m",
             "playwright",
             "install",
             "chromium",
@@ -86,7 +83,7 @@ class MCPManager:
         if proc.returncode != 0:
             output = stdout.decode(errors="replace") if stdout else ""
             raise RuntimeError(
-                f"Failed to install Chromium via 'npx playwright install chromium'. "
+                f"Failed to install Chromium via 'python -m playwright install chromium'. "
                 f"Output:\n{output}"
             )
         logger.info("Chromium installed successfully")
@@ -128,11 +125,11 @@ class MCPManager:
             )
         except asyncio.TimeoutError:
             raise RuntimeError(
-                "MCP subprocess failed — check Node.js and @playwright/mcp installation"
+                "MCP subprocess failed — check Python playwright installation"
             )
         except Exception as e:
             raise RuntimeError(
-                "MCP subprocess failed — check Node.js and @playwright/mcp installation"
+                "MCP subprocess failed — check Python playwright installation"
             ) from e
 
         self._tools = await load_mcp_tools(self._session)

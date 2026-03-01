@@ -24,7 +24,7 @@ from agent.prompts import SYSTEM_PROMPT
 
 # Only these three tools are permitted. The Playwright MCP server exposes ~22
 # tools; we filter here so the agent cannot waste its step budget on others.
-REQUIRED_TOOLS = {"browser_navigate", "browser_take_screenshot", "browser_wait_for"}
+REQUIRED_TOOLS = {"browser_navigate", "browser_take_screenshot", "browser_wait_for", "browser_get_text"}
 
 # recursion_limit=15 is the practical minimum for 3-page scraping.
 # LangGraph counts every reasoning superstep (not just tool calls):
@@ -33,7 +33,7 @@ REQUIRED_TOOLS = {"browser_navigate", "browser_take_screenshot", "browser_wait_f
 # The AGNT-01 requirement ("prevent infinite loops, keep browser calls ≤ 10")
 # refers to browser tool calls, not total supersteps. 15 supersteps gives
 # room for three full pages without triggering the limit on a clean run.
-_RECURSION_LIMIT = 15
+_RECURSION_LIMIT = 20
 
 
 def _move_tool_images_to_user(state: dict) -> dict:

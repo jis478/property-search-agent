@@ -135,7 +135,7 @@ async def run_agent(run_id: str, agent, query: str) -> None:
     try:
         async for event in agent.astream_events(
             {"messages": [{"role": "user", "content": query}]},
-            config={"recursion_limit": 15},
+            config={"recursion_limit": 30},
             version="v2",
         ):
             kind = event["event"]
@@ -188,6 +188,11 @@ async def run_agent(run_id: str, agent, query: str) -> None:
                 partial = bool(_parsed.get("bot_detected", False))
             except Exception:
                 pass  # best-effort JSON check; partial stays False if parse fails
+        # If the agent was cut off before outputting any text (recursion limit hit
+        # mid-run), treat it as a step-limit error rather than silently returning 0.
+        if not final_text:
+            from agent.exceptions import StepLimitError
+            raise StepLimitError("Agent ran out of steps before completing the search.")
         listings = parse_listings_from_message(final_text) if final_text else []
         # If the agent output plain English instead of JSON (no "listings" key found),
         # treat it as a BotDetectedError — domain.com.au likely blocked the scrape.
@@ -200,6 +205,14 @@ async def run_agent(run_id: str, agent, query: str) -> None:
         run["status"] = "cancelled"
         raise
     except Exception as exc:
+        # Translate GraphRecursionError to StepLimitError for a friendly message.
+        try:
+            from langgraph.errors import GraphRecursionError
+            if isinstance(exc, GraphRecursionError):
+                from agent.exceptions import StepLimitError
+                exc = StepLimitError("Agent exceeded step limit without completing.")
+        except ImportError:
+            pass
         # BotDetectedError raised by parse_listings_from_message means bot was
         # detected AND zero listings were collected — this is a full failure.
         # All other exceptions (StepLimitError, MCPError, etc.) are also full failures.

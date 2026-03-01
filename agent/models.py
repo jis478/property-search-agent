@@ -11,12 +11,12 @@ class PropertyListing(BaseModel):
     """
 
     address: str
-    listing_url: str
+    listing_url: str | None = None
     price: str | None = None
     bedrooms: int | None = None
     bathrooms: int | None = None
     property_type: str | None = None
 
     def is_valid(self) -> bool:
-        """Return True if the listing has both address and listing_url set (non-empty)."""
-        return bool(self.address and self.listing_url)
+        """Return True if the listing has at least an address."""
+        return bool(self.address)
