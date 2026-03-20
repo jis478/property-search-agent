@@ -4,393 +4,807 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Property Search</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    animation: { 'fade-in': 'fadeIn 0.4s ease-out forwards' },
-                    keyframes: {
-                        fadeIn: {
-                            '0%':   { opacity: '0', transform: 'translateY(8px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
-                        },
-                    },
-                },
-            },
-        };
-    </script>
-</head>
-<body class="bg-gray-50 min-h-screen">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <header class="bg-white border-b border-gray-200 px-4 py-4">
-        <div class="max-w-5xl mx-auto">
-            <h1 class="text-xl font-bold text-green-600">Property Search</h1>
-        </div>
+        :root {
+            --bg:        #080808;
+            --surface:   #111111;
+            --surface2:  #181818;
+            --border:    #2a2a2a;
+            --gold:      #c9993a;
+            --gold-dim:  #8a6a25;
+            --cream:     #f0e6cc;
+            --cream-dim: #9a8e78;
+            --red:       #c0392b;
+            --mono:      'JetBrains Mono', monospace;
+            --sans:      'DM Sans', sans-serif;
+            --serif:     'Cormorant Garamond', Georgia, serif;
+        }
+
+        html, body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--cream);
+            font-family: var(--sans);
+            font-weight: 300;
+            font-size: 15px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Noise texture overlay ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
+        }
+
+        /* ── Layout ── */
+        .app {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Header ── */
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 20px 32px;
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+        }
+
+        header h1 {
+            font-family: var(--serif);
+            font-size: 1.5rem;
+            font-weight: 300;
+            font-style: italic;
+            color: var(--gold);
+            letter-spacing: 0.02em;
+        }
+
+        header span {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            color: var(--cream-dim);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        /* ── Main ── */
+        main {
+            flex: 1;
+            max-width: 860px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 32px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        /* ── Chat container ── */
+        .chat-container {
+            border: 1px solid var(--border);
+            background: var(--surface);
+            display: flex;
+            flex-direction: column;
+            height: 480px;
+        }
+
+        /* ── Chat log ── */
+        #chat-log {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        #chat-log::-webkit-scrollbar { width: 4px; }
+        #chat-log::-webkit-scrollbar-track { background: transparent; }
+        #chat-log::-webkit-scrollbar-thumb { background: var(--border); }
+
+        /* ── Chat bubbles ── */
+        .chat-row {
+            display: flex;
+            animation: slideUp 0.25s ease-out both;
+        }
+        .chat-row.user { justify-content: flex-end; }
+        .chat-row.assistant { justify-content: flex-start; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .bubble {
+            max-width: 72%;
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .bubble.user {
+            background: var(--gold);
+            color: #0a0a0a;
+            font-weight: 400;
+        }
+
+        .bubble.assistant {
+            background: var(--surface2);
+            color: var(--cream);
+            border: 1px solid var(--border);
+        }
+
+        /* ── Status bar ── */
+        #status-bar {
+            border-top: 1px solid var(--border);
+            background: #0d0d0d;
+            padding: 10px 20px;
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        #status-bar.visible { display: flex; }
+
+        #banner {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            color: var(--gold);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            display: none;
+        }
+
+        #banner.visible {
+            display: block;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.4; }
+        }
+
+        #step-log {
+            max-height: 80px;
+            overflow-y: auto;
+            display: none;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        #step-log.visible { display: block; }
+
+        .step-line {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            color: var(--cream-dim);
+            padding: 1px 0;
+            letter-spacing: 0.04em;
+        }
+
+        .step-line .tick-ok  { color: var(--gold); }
+        .step-line .tick-err { color: var(--red); }
+
+        #error-banner {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            color: var(--red);
+            letter-spacing: 0.04em;
+            display: none;
+        }
+
+        #error-banner.visible { display: block; }
+
+        /* ── Input form ── */
+        #chat-form {
+            border-top: 1px solid var(--border);
+            padding: 16px 20px;
+            display: flex;
+            gap: 12px;
+            background: var(--surface);
+        }
+
+        #chat-input {
+            flex: 1;
+            background: #0d0d0d;
+            border: 1px solid var(--border);
+            color: var(--cream);
+            font-family: var(--sans);
+            font-size: 0.875rem;
+            font-weight: 300;
+            padding: 10px 16px;
+            outline: none;
+            transition: border-color 0.2s;
+            border-radius: 0;
+            -webkit-appearance: none;
+        }
+
+        #chat-input::placeholder { color: var(--cream-dim); }
+        #chat-input:focus { border-color: var(--gold-dim); }
+        #chat-input:disabled { opacity: 0.4; }
+
+        #send-btn {
+            background: var(--gold);
+            color: #080808;
+            border: none;
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 10px 22px;
+            cursor: pointer;
+            transition: background 0.2s, opacity 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 0;
+        }
+
+        #send-btn:hover:not(:disabled) { background: #d4a840; }
+        #send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        #spinner {
+            width: 12px;
+            height: 12px;
+            border: 1.5px solid #08080840;
+            border-top-color: #080808;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+
+        #spinner.visible { display: block; }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ── Results section ── */
+        #results-section {
+            display: none;
+            max-width: 860px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 24px 48px;
+        }
+
+        #results-section.visible { display: block; }
+
+        .results-header {
+            border-top: 1px solid var(--border);
+            padding: 24px 0 20px;
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        .results-header h2 {
+            font-family: var(--serif);
+            font-size: 1.25rem;
+            font-weight: 300;
+            font-style: italic;
+            color: var(--cream);
+        }
+
+        .results-header .count {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            color: var(--gold);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        #results-warning {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            color: #c9832a;
+            letter-spacing: 0.04em;
+            padding: 10px 14px;
+            border: 1px solid #c9832a30;
+            background: #c9832a08;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        #results-warning.visible { display: block; }
+
+        #card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1px;
+            background: var(--border);
+        }
+
+        #no-results {
+            display: none;
+            font-family: var(--mono);
+            font-size: 0.75rem;
+            color: var(--cream-dim);
+            letter-spacing: 0.08em;
+            text-align: center;
+            padding: 48px 0;
+        }
+
+        #no-results.visible { display: block; }
+
+        /* ── Property card ── */
+        .prop-card {
+            background: var(--surface);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            animation: fadeIn 0.35s ease-out both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .prop-card:hover {
+            background: var(--surface2);
+        }
+
+        .prop-card .address {
+            font-family: var(--sans);
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: var(--cream);
+            line-height: 1.4;
+        }
+
+        .prop-card .price {
+            font-family: var(--serif);
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: var(--gold);
+            letter-spacing: 0.01em;
+        }
+
+        .prop-card .price-na {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            color: var(--cream-dim);
+            letter-spacing: 0.08em;
+        }
+
+        .prop-card .meta {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            color: var(--cream-dim);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .prop-card .map-link {
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            color: var(--gold-dim);
+            letter-spacing: 0.06em;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .prop-card .map-link:hover { color: var(--gold); }
+
+        .prop-card iframe {
+            width: 100%;
+            height: 110px;
+            border: none;
+            display: block;
+            margin-top: 4px;
+            filter: grayscale(1) invert(1) brightness(0.7);
+        }
+
+        .prop-card .cta {
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--gold);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.15s;
+        }
+
+        .prop-card .cta:hover { color: var(--cream); }
+
+        .prop-card .cta::after {
+            content: '→';
+            font-style: normal;
+        }
+
+        /* ── Divider line ── */
+        .divider {
+            width: 40px;
+            height: 1px;
+            background: var(--gold-dim);
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <header>
+        <h1>Property Search</h1>
+        <span>domain.com.au · AI-powered</span>
     </header>
 
-    <main class="max-w-5xl mx-auto px-4 py-8 space-y-6">
-        <section class="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col" style="height:460px">
-            <div id="chat-log" class="flex-1 px-4 py-3 space-y-3 overflow-y-auto bg-white"></div>
+    <main>
+        <div class="chat-container">
+            <div id="chat-log"></div>
 
-            <div id="status-bar" class="hidden border-t border-gray-100 bg-gray-50 px-4 py-2 space-y-1">
-                <div id="banner" class="hidden text-xs text-green-800 font-medium animate-pulse"></div>
-                <div id="step-log" class="hidden max-h-24 overflow-y-auto space-y-0.5 font-mono text-xs text-gray-600"></div>
-                <div id="error-banner" class="hidden text-xs text-red-700"></div>
+            <div id="status-bar">
+                <div id="banner"></div>
+                <div id="step-log"></div>
+                <div id="error-banner"></div>
             </div>
 
-            <form id="chat-form" class="border-t border-gray-100 px-3 py-3 flex gap-2 bg-white rounded-b-xl">
+            <form id="chat-form">
                 <input
                     id="chat-input"
                     type="text"
-                    placeholder="Ask me anything, e.g. &quot;Find a 2 bedroom apartment in Richmond under $600/week&quot;"
-                    class="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="e.g. 2 bedroom apartment in Richmond under $600/week"
+                    autocomplete="off"
                 />
-                <button
-                    id="send-btn"
-                    type="submit"
-                    class="flex items-center gap-2 bg-green-600 text-white rounded-lg px-5 py-3 font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
-                >
-                    <svg id="spinner" class="hidden animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                <button id="send-btn" type="submit">
+                    <div id="spinner"></div>
                     Send
                 </button>
             </form>
-        </section>
+        </div>
     </main>
 
-    <section id="results-section" class="hidden max-w-5xl mx-auto px-4 pb-12 space-y-4">
-        <div id="results-warning" class="hidden rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-amber-700 text-sm"></div>
-        <div id="card-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
-        <div id="no-results" class="hidden text-center text-gray-500 py-12 text-base">No listings found. Try broadening your search.</div>
+    <section id="results-section">
+        <div class="results-header">
+            <h2>Listings</h2>
+            <span class="count" id="results-count"></span>
+        </div>
+        <div id="results-warning"></div>
+        <div id="card-grid"></div>
+        <div id="no-results">No listings found — try broadening your search.</div>
     </section>
 
-    <script>
-        window.GOOGLE_MAPS_EMBED_KEY = {{ (google_maps_api_key or '') | tojson }};
-        const form           = document.getElementById('chat-form');
-        const chatInput      = document.getElementById('chat-input');
-        const sendBtn        = document.getElementById('send-btn');
-        const spinner        = document.getElementById('spinner');
-        const chatLog        = document.getElementById('chat-log');
-        const statusBar      = document.getElementById('status-bar');
-        const banner         = document.getElementById('banner');
-        const stepLog        = document.getElementById('step-log');
-        const errorBanner    = document.getElementById('error-banner');
-        const resultsSection = document.getElementById('results-section');
-        const resultsWarning = document.getElementById('results-warning');
-        const cardGrid       = document.getElementById('card-grid');
-        const noResults      = document.getElementById('no-results');
+</div>
 
-        // Full conversation history sent to /chat on every turn.
-        // Includes user, assistant, assistant+tool_calls, and tool messages
-        // so the LLM can reference previous search results.
-        let messages   = [];
-        let currentEs  = null;
-        let lastStepEl = null;
+<script>
+    window.GOOGLE_MAPS_EMBED_KEY = {{ (google_maps_api_key or '') | tojson }};
 
-        // Pending tool_call from the last /chat response —
-        // used to link the SSE result back as a ToolMessage.
-        let pendingToolCall = null;
+    const form           = document.getElementById('chat-form');
+    const chatInput      = document.getElementById('chat-input');
+    const sendBtn        = document.getElementById('send-btn');
+    const spinner        = document.getElementById('spinner');
+    const chatLog        = document.getElementById('chat-log');
+    const statusBar      = document.getElementById('status-bar');
+    const banner         = document.getElementById('banner');
+    const stepLog        = document.getElementById('step-log');
+    const errorBanner    = document.getElementById('error-banner');
+    const resultsSection = document.getElementById('results-section');
+    const resultsWarning = document.getElementById('results-warning');
+    const cardGrid       = document.getElementById('card-grid');
+    const noResults      = document.getElementById('no-results');
+    const resultsCount   = document.getElementById('results-count');
 
-        // ── Helpers ───────────────────────────────────────────────────────────
-        function esc(str) {
-            return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    let messages        = [];
+    let currentEs       = null;
+    let lastStepEl      = null;
+    let pendingToolCall = null;
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+    function esc(str) {
+        return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function safeUrl(url) {
+        if (!url) return null;
+        return String(url).startsWith('https://') ? url : null;
+    }
+
+    function appendBubble(role, text) {
+        if (!text) return;
+        const row = document.createElement('div');
+        row.className = 'chat-row ' + role;
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble ' + role;
+        bubble.textContent = String(text);
+        row.appendChild(bubble);
+        chatLog.appendChild(row);
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    // ── UI state ──────────────────────────────────────────────────────────
+    function setBusy(label) {
+        chatInput.disabled = true;
+        sendBtn.disabled   = true;
+        spinner.classList.add('visible');
+        if (label) {
+            banner.textContent = label;
+            banner.classList.add('visible');
+        }
+        stepLog.innerHTML = '';
+        stepLog.classList.add('visible');
+        errorBanner.classList.remove('visible');
+        statusBar.classList.add('visible');
+    }
+
+    function setIdle() {
+        chatInput.disabled = false;
+        sendBtn.disabled   = false;
+        spinner.classList.remove('visible');
+        banner.classList.remove('visible');
+        stepLog.classList.remove('visible');
+        errorBanner.classList.remove('visible');
+        statusBar.classList.remove('visible');
+        chatInput.focus();
+    }
+
+    function showError(msg) {
+        errorBanner.textContent = msg;
+        errorBanner.classList.add('visible');
+        statusBar.classList.add('visible');
+        appendBubble('assistant', msg);
+        setIdle();
+    }
+
+    // ── Step log ──────────────────────────────────────────────────────────
+    const TOOL_ICONS = {
+        browser_navigate:        '> nav  ',
+        browser_wait_for:        '> wait ',
+        browser_get_text:        '> read ',
+        browser_take_screenshot: '> snap ',
+    };
+
+    function appendStepLine(tool, label) {
+        const el = document.createElement('div');
+        el.className = 'step-line';
+        el.textContent = (TOOL_ICONS[tool] ?? '> ') + (label ?? tool);
+        stepLog.appendChild(el);
+        stepLog.scrollTop = stepLog.scrollHeight;
+        lastStepEl = el;
+    }
+
+    function appendTickToPreviousLine(success) {
+        if (!lastStepEl) return;
+        const tick = document.createElement('span');
+        tick.textContent = success ? ' ✓' : ' ✗';
+        tick.className   = success ? 'tick-ok' : 'tick-err';
+        lastStepEl.appendChild(tick);
+    }
+
+    // ── Error messages ────────────────────────────────────────────────────
+    const ERROR_MESSAGES = {
+        BotDetectedError: 'Domain.com.au blocked the search. Try again in a moment.',
+        StepLimitError:   'The search took too long. Try a more specific query.',
+        MCPError:         'Something went wrong. Check the server is running.',
+        UnknownError:     'Something went wrong. Check the server is running.',
+        connection:       'Lost connection to the server. Please try again.',
+    };
+
+    // ── Card rendering ────────────────────────────────────────────────────
+    function buildCardHTML(listing, schoolAddress) {
+        const price = listing.price
+            ? `<div class="price">${esc(listing.price)}</div>`
+            : `<div class="price-na">Price on application</div>`;
+
+        const metaParts = [];
+        if (listing.bedrooms  != null) metaParts.push(`${esc(String(listing.bedrooms))} bed`);
+        if (listing.bathrooms != null) metaParts.push(`${esc(String(listing.bathrooms))} bath`);
+        if (listing.property_type)     metaParts.push(esc(listing.property_type));
+        if (listing.distance_to_school != null)
+            metaParts.push(`${Math.round(listing.distance_to_school)}m to school`);
+        const meta = metaParts.length
+            ? `<div class="meta">${metaParts.join(' · ')}</div>` : '';
+
+        const url = safeUrl(listing.listing_url);
+        const cta = url
+            ? `<a href="${url}" target="_blank" rel="noopener noreferrer" class="cta">View on Domain</a>`
+            : '';
+
+        let mapBlock = '';
+        if (schoolAddress && listing.address) {
+            const origin  = encodeURIComponent(schoolAddress);
+            const dest    = encodeURIComponent(listing.address);
+            const dirLink = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=walking`;
+            mapBlock = `<a href="${dirLink}" target="_blank" rel="noopener noreferrer" class="map-link">Walking route to school →</a>
+                ${window.GOOGLE_MAPS_EMBED_KEY
+                    ? `<iframe frameborder="0" style="border:0"
+                        src="https://www.google.com/maps/embed/v1/directions?key=${encodeURIComponent(window.GOOGLE_MAPS_EMBED_KEY)}&origin=${origin}&destination=${dest}&mode=walking"></iframe>`
+                    : ''}`;
         }
 
-        function safeUrl(url) {
-            if (!url) return null;
-            return String(url).startsWith('https://') ? url : null;
+        return `<div class="prop-card">
+            <div class="address">${esc(listing.address)}</div>
+            <div class="divider"></div>
+            ${price}${meta}${mapBlock}${cta}
+        </div>`;
+    }
+
+    function renderResults(data) {
+        setIdle();
+        resultsSection.classList.add('visible');
+        cardGrid.innerHTML = '';
+        noResults.classList.remove('visible');
+        resultsWarning.classList.remove('visible');
+
+        if (data.partial) {
+            resultsWarning.textContent = 'Partial results — Domain.com.au may have blocked some pages.';
+            resultsWarning.classList.add('visible');
         }
 
-        function appendBubble(role, text) {
-            if (!text) return;
-            const row = document.createElement('div');
-            row.className = 'flex ' + (role === 'user' ? 'justify-end' : 'justify-start');
-            const bubble = document.createElement('div');
-            const base = 'max-w-[80%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ';
-            bubble.className = base + (role === 'user'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-100 text-gray-900');
-            bubble.textContent = String(text);
-            row.appendChild(bubble);
-            chatLog.appendChild(row);
-            chatLog.scrollTop = chatLog.scrollHeight;
+        if (!data.listings || data.listings.length === 0) {
+            cardGrid.classList.add('hidden');
+            noResults.classList.add('visible');
+            resultsCount.textContent = '';
+            commitToolResult(data, 'No listings found.');
+            appendBubble('assistant', 'No listings found matching that criteria. Try broadening your search.');
+            messages.push({ role: 'assistant', content: 'No listings found matching that criteria.' });
+            return;
         }
 
-        // ── UI state ──────────────────────────────────────────────────────────
-        function setBusy(label) {
-            chatInput.disabled  = true;
-            sendBtn.disabled    = true;
-            spinner.classList.remove('hidden');
-            if (label) {
-                banner.textContent = label;
-                banner.classList.remove('hidden');
+        cardGrid.classList.remove('hidden');
+        resultsCount.textContent = `${data.listings.length} result${data.listings.length === 1 ? '' : 's'}`;
+        const schoolAddr = data.school_address || null;
+        for (const l of data.listings) {
+            cardGrid.insertAdjacentHTML('beforeend', buildCardHTML(l, schoolAddr));
+        }
+        const n = data.listings.length;
+        const summaryText = buildToolResultText(data);
+        commitToolResult(data, summaryText);
+        const replyText = `Found ${n} listing${n === 1 ? '' : 's'}. See the cards below.`;
+        appendBubble('assistant', replyText);
+        messages.push({ role: 'assistant', content: replyText });
+    }
+
+    // ── Tool result helpers ───────────────────────────────────────────────
+    function buildToolResultText(data) {
+        if (!data.listings || data.listings.length === 0) return 'No listings found.';
+        return data.listings.map((l, i) =>
+            `${i+1}. ${l.address} | price: ${l.price ?? 'N/A'} | beds: ${l.bedrooms ?? '?'} | baths: ${l.bathrooms ?? '?'} | type: ${l.property_type ?? '?'} | url: ${l.listing_url ?? ''}`
+        ).join('\n');
+    }
+
+    function commitToolResult(data, summaryText) {
+        if (!pendingToolCall) return;
+        messages.push({
+            role: 'tool',
+            content: summaryText,
+            tool_call_id: pendingToolCall.id,
+        });
+        pendingToolCall = null;
+    }
+
+    function commitToolError(errorMsg) {
+        if (!pendingToolCall) return;
+        messages.push({
+            role: 'tool',
+            content: 'Error: ' + errorMsg,
+            tool_call_id: pendingToolCall.id,
+        });
+        pendingToolCall = null;
+    }
+
+    // ── SSE subscription ─────────────────────────────────────────────────
+    function subscribeToRun(runId) {
+        if (currentEs) { currentEs.close(); currentEs = null; }
+
+        setBusy('Searching properties...');
+
+        currentEs = new EventSource('/stream/' + runId);
+
+        currentEs.addEventListener('tool_call', (e) => {
+            const d = JSON.parse(e.data);
+            appendStepLine(d.tool, d.label);
+        });
+
+        currentEs.addEventListener('tool_result', (e) => {
+            const d = JSON.parse(e.data);
+            appendTickToPreviousLine(d.success);
+        });
+
+        currentEs.addEventListener('complete', (e) => {
+            currentEs.close(); currentEs = null;
+            renderResults(JSON.parse(e.data));
+        });
+
+        currentEs.addEventListener('error', (e) => {
+            if (!currentEs) return;
+            currentEs.close(); currentEs = null;
+            let msg = ERROR_MESSAGES.UnknownError;
+            try {
+                const d = JSON.parse(e.data);
+                msg = ERROR_MESSAGES[d.error_type] ?? msg;
+            } catch {}
+            commitToolError(msg);
+            showError(msg);
+        });
+
+        currentEs.onerror = () => {
+            if (currentEs) {
+                currentEs.close(); currentEs = null;
+                commitToolError(ERROR_MESSAGES.connection);
+                showError(ERROR_MESSAGES.connection);
             }
-            stepLog.innerHTML = '';
-            stepLog.classList.remove('hidden');
-            errorBanner.classList.add('hidden');
-            statusBar.classList.remove('hidden');
-        }
-
-        function setIdle() {
-            chatInput.disabled  = false;
-            sendBtn.disabled    = false;
-            spinner.classList.add('hidden');
-            banner.classList.add('hidden');
-            stepLog.classList.add('hidden');
-            errorBanner.classList.add('hidden');
-            statusBar.classList.add('hidden');
-            chatInput.focus();
-        }
-
-        function showError(msg) {
-            errorBanner.textContent = msg;
-            errorBanner.classList.remove('hidden');
-            statusBar.classList.remove('hidden');
-            appendBubble('assistant', msg);
-            setIdle();
-        }
-
-        // ── Step log ──────────────────────────────────────────────────────────
-        const TOOL_ICONS = {
-            browser_navigate:        '🌐 ',
-            browser_wait_for:        '⏳ ',
-            browser_get_text:        '📄 ',
-            browser_take_screenshot: '📸 ',
         };
+    }
 
-        function appendStepLine(tool, label) {
-            const el = document.createElement('div');
-            el.className = 'flex items-center gap-1.5 py-0.5';
-            el.textContent = (TOOL_ICONS[tool] ?? '• ') + (label ?? tool);
-            stepLog.appendChild(el);
-            stepLog.scrollTop = stepLog.scrollHeight;
-            lastStepEl = el;
-        }
+    // ── Submit handler ────────────────────────────────────────────────────
+    async function handleSubmit(event) {
+        event.preventDefault();
+        const query = chatInput.value.trim();
+        if (!query) return;
 
-        function appendTickToPreviousLine(success) {
-            if (!lastStepEl) return;
-            const tick = document.createElement('span');
-            tick.textContent = success ? ' ✓' : ' ✗';
-            tick.className   = success ? 'text-green-600' : 'text-red-500';
-            lastStepEl.appendChild(tick);
-        }
+        appendBubble('user', query);
+        messages.push({ role: 'user', content: query });
+        chatInput.value = '';
 
-        // ── Error messages ────────────────────────────────────────────────────
-        const ERROR_MESSAGES = {
-            BotDetectedError: 'Domain.com.au blocked the search. Try again in a moment.',
-            StepLimitError:   'The search took too long. Try a more specific query.',
-            MCPError:         'Something went wrong. Check the server is running.',
-            UnknownError:     'Something went wrong. Check the server is running.',
-            connection:       'Lost connection to the server. Please try again.',
-        };
+        setBusy('Thinking...');
 
-        // ── Card rendering ────────────────────────────────────────────────────
-        function buildCardHTML(listing, schoolAddress) {
-            const price = listing.price
-                ? `<p class="text-green-600 text-lg font-semibold">${esc(listing.price)}</p>`
-                : `<p class="text-gray-400 text-sm italic">Price on application</p>`;
-            const metaParts = [];
-            if (listing.bedrooms  != null) metaParts.push(`${esc(String(listing.bedrooms))} bed`);
-            if (listing.bathrooms != null) metaParts.push(`${esc(String(listing.bathrooms))} bath`);
-            if (listing.property_type)     metaParts.push(esc(listing.property_type));
-            if (listing.distance_to_school != null)
-                metaParts.push(`${Math.round(listing.distance_to_school)} m walk to school`);
-            const meta = metaParts.length
-                ? `<p class="text-sm text-gray-500">${metaParts.join(' · ')}</p>` : '';
-            const url = safeUrl(listing.listing_url);
-            const cta = url
-                ? `<a href="${url}" target="_blank" rel="noopener noreferrer"
-                      class="mt-auto block text-center border border-green-600 text-green-600
-                             rounded-lg px-3 py-2 text-sm font-medium hover:bg-green-50 transition-colors">
-                      View on Domain &rarr;</a>` : '';
+        try {
+            const res = await fetch('/chat', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ messages }),
+            });
 
-            let mapBlock = '';
-            if (schoolAddress && listing.address) {
-                const origin = encodeURIComponent(schoolAddress);
-                const dest = encodeURIComponent(listing.address);
-                const dirLink = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=walking`;
-                mapBlock = `
-                    <div class="mt-2">
-                        <a href="${dirLink}" target="_blank" rel="noopener noreferrer"
-                           class="text-xs text-green-600 hover:underline">View walking route to school</a>
-                        ${window.GOOGLE_MAPS_EMBED_KEY
-                            ? `<iframe class="mt-1 w-full h-32 rounded border border-gray-200" frameborder="0" style="border:0"
-                                src="https://www.google.com/maps/embed/v1/directions?key=${encodeURIComponent(window.GOOGLE_MAPS_EMBED_KEY)}&origin=${origin}&destination=${dest}&mode=walking"></iframe>`
-                            : ''}
-                    </div>`;
-            }
-
-            return `
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4
-                            flex flex-col gap-2 animate-fade-in">
-                    <p class="font-semibold text-gray-900 leading-snug">${esc(listing.address)}</p>
-                    ${price}${meta}${mapBlock}${cta}
-                </div>`;
-        }
-
-        function renderResults(data) {
-            setIdle();
-            resultsSection.classList.remove('hidden');
-            cardGrid.innerHTML = '';
-            noResults.classList.add('hidden');
-            resultsWarning.classList.add('hidden');
-
-            if (data.partial) {
-                resultsWarning.textContent = 'Some results may be incomplete — Domain.com.au may have partially blocked the search.';
-                resultsWarning.classList.remove('hidden');
-            }
-
-            if (!data.listings || data.listings.length === 0) {
-                cardGrid.classList.add('hidden');
-                noResults.classList.remove('hidden');
-                commitToolResult(data, 'No listings found.');
-                appendBubble('assistant', 'I could not find any listings matching that. Try broadening your criteria.');
-                messages.push({ role: 'assistant', content: 'I could not find any listings matching that.' });
+            if (!res.ok) {
+                showError(ERROR_MESSAGES.UnknownError);
                 return;
             }
 
-            cardGrid.classList.remove('hidden');
-            const schoolAddr = data.school_address || null;
-            for (const l of data.listings) {
-                cardGrid.insertAdjacentHTML('beforeend', buildCardHTML(l, schoolAddr));
+            const data = await res.json();
+
+            if (data.reply) {
+                appendBubble('assistant', data.reply);
             }
-            const n = data.listings.length;
-            const summaryText = buildToolResultText(data);
-            commitToolResult(data, summaryText);
-            const replyText = `I found ${n} listing${n === 1 ? '' : 's'}. See the cards below.`;
-            appendBubble('assistant', replyText);
-            messages.push({ role: 'assistant', content: replyText });
-        }
 
-        // ── Tool result helpers ───────────────────────────────────────────────
-
-        function buildToolResultText(data) {
-            if (!data.listings || data.listings.length === 0) return 'No listings found.';
-            return data.listings.map((l, i) =>
-                `${i+1}. ${l.address} | price: ${l.price ?? 'N/A'} | beds: ${l.bedrooms ?? '?'} | baths: ${l.bathrooms ?? '?'} | type: ${l.property_type ?? '?'} | url: ${l.listing_url ?? ''}`
-            ).join('\n');
-        }
-
-        function commitToolResult(data, summaryText) {
-            if (!pendingToolCall) return;
-            messages.push({
-                role: 'tool',
-                content: summaryText,
-                tool_call_id: pendingToolCall.id,
-            });
-            pendingToolCall = null;
-        }
-
-        function commitToolError(errorMsg) {
-            if (!pendingToolCall) return;
-            messages.push({
-                role: 'tool',
-                content: 'Error: ' + errorMsg,
-                tool_call_id: pendingToolCall.id,
-            });
-            pendingToolCall = null;
-        }
-
-        // ── SSE subscription ─────────────────────────────────────────────────
-        function subscribeToRun(runId) {
-            if (currentEs) { currentEs.close(); currentEs = null; }
-
-            setBusy('Searching properties...');
-
-            currentEs = new EventSource('/stream/' + runId);
-
-            currentEs.addEventListener('tool_call', (e) => {
-                const d = JSON.parse(e.data);
-                appendStepLine(d.tool, d.label);
-            });
-
-            currentEs.addEventListener('tool_result', (e) => {
-                const d = JSON.parse(e.data);
-                appendTickToPreviousLine(d.success);
-            });
-
-            currentEs.addEventListener('complete', (e) => {
-                currentEs.close(); currentEs = null;
-                renderResults(JSON.parse(e.data));
-            });
-
-            currentEs.addEventListener('error', (e) => {
-                if (!currentEs) return;
-                currentEs.close(); currentEs = null;
-                let msg = ERROR_MESSAGES.UnknownError;
-                try {
-                    const d = JSON.parse(e.data);
-                    msg = ERROR_MESSAGES[d.error_type] ?? msg;
-                } catch {}
-                commitToolError(msg);
-                showError(msg);
-            });
-
-            currentEs.onerror = () => {
-                if (currentEs) {
-                    currentEs.close(); currentEs = null;
-                    commitToolError(ERROR_MESSAGES.connection);
-                    showError(ERROR_MESSAGES.connection);
-                }
-            };
-        }
-
-        // ── Submit handler ────────────────────────────────────────────────────
-        async function handleSubmit(event) {
-            event.preventDefault();
-            const query = chatInput.value.trim();
-            if (!query) return;
-
-            appendBubble('user', query);
-            messages.push({ role: 'user', content: query });
-            chatInput.value = '';
-
-            setBusy('Thinking...');
-
-            try {
-                const res = await fetch('/chat', {
-                    method:  'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body:    JSON.stringify({ messages }),
+            if (data.tool_call) {
+                messages.push({
+                    role: 'assistant',
+                    content: data.reply || '',
+                    tool_calls: [data.tool_call],
                 });
-
-                if (!res.ok) {
-                    showError(ERROR_MESSAGES.UnknownError);
-                    return;
-                }
-
-                const data = await res.json();
-
-                // Always show the reply bubble
-                if (data.reply) {
-                    appendBubble('assistant', data.reply);
-                }
-
-                if (data.tool_call) {
-                    // LLM wants to call an async tool — store the AI message
-                    // with tool_calls so the history is correct for LangChain.
-                    messages.push({
-                        role: 'assistant',
-                        content: data.reply || '',
-                        tool_calls: [data.tool_call],
-                    });
-                    pendingToolCall = data.tool_call;
-                    subscribeToRun(data.run_id);
-                } else {
-                    // Plain reply — no tool involved.
-                    messages.push({ role: 'assistant', content: data.reply || '' });
-                    setIdle();
-                }
-
-            } catch {
-                showError(ERROR_MESSAGES.connection);
+                pendingToolCall = data.tool_call;
+                subscribeToRun(data.run_id);
+            } else {
+                messages.push({ role: 'assistant', content: data.reply || '' });
+                setIdle();
             }
+
+        } catch {
+            showError(ERROR_MESSAGES.connection);
         }
+    }
 
-        form.addEventListener('submit', handleSubmit);
+    form.addEventListener('submit', handleSubmit);
 
-        appendBubble('assistant', 'Hi! I can help you search for properties on domain.com.au. Just tell me what you\'re looking for.');
-    </script>
+    appendBubble('assistant', 'Hello. Tell me what you\'re looking for and I\'ll search domain.com.au for you.');
+</script>
 
 </body>
 </html>
