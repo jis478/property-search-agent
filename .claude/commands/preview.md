@@ -4,9 +4,14 @@ description: Screenshot the running app with Playwright and review the UI design
 argument-hint: [url]
 allowed-tools:
   - Bash
+  - Read
 ---
 
 Take a screenshot of the running app using Playwright and review the design.
+
+## When to invoke automatically
+
+Run this skill automatically after every change to `templates/index.html` — no need for the user to ask. Always screenshot and review before considering a frontend task done.
 
 ## Steps
 
