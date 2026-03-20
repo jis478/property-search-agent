@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt -r requirements-dev.txt
+          pip install ruff
+
+      - name: Lint (ruff)
+        run: ruff check . --output-format=github
+
+      - name: Test
+        run: pytest tests/ -v --tb=short
+        env:
+          # Provide dummy keys so pydantic-settings doesn't fail at import
+          OPENAI_API_KEY: sk-dummy
