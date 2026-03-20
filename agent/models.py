@@ -16,6 +16,7 @@ class PropertyListing(BaseModel):
     bedrooms: int | None = None
     bathrooms: int | None = None
     property_type: str | None = None
+    distance_to_school: float | None = None
 
     def is_valid(self) -> bool:
         """Return True if the listing has at least an address."""

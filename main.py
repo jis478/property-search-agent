@@ -14,8 +14,10 @@ from fastapi.templating import Jinja2Templates
 from config import settings  # noqa: F401 — ensures settings loaded and validated at startup
 from mcp_subprocess.manager import MCPManager
 from agent import build_agent
+from agent.chat_graph import build_chat_graph
 from api.search import router as search_router
 from api.stream import router as stream_router
+from api.chat import router as chat_router
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,10 @@ async def lifespan(app: FastAPI):
     app.state.mcp_manager = manager
     app.state.mcp_tools = tools
     app.state.agent = build_agent(tools)
-    logger.info("LangGraph agent built and stored on app.state")
+    logger.info("LangGraph property agent built and stored on app.state")
+
+    app.state.chat_graph = build_chat_graph()
+    logger.info("LangGraph chat workflow built and stored on app.state")
 
     tool_names = [t.name for t in tools]
     logger.info(f"MCP ready — {len(tools)} tools available")
@@ -62,6 +67,7 @@ app.add_middleware(
 
 app.include_router(search_router)
 app.include_router(stream_router)
+app.include_router(chat_router)
 
 
 @app.get("/health")
@@ -86,4 +92,10 @@ async def list_tools(request: Request):
 
 @app.get("/")
 async def index(request: Request):
-    return templates.TemplateResponse(request, "index.html")
+    from config import settings
+
+    return templates.TemplateResponse(
+        request,
+        "index.html",
+        {"google_maps_api_key": getattr(settings, "google_maps_api_key", "") or ""},
+    )

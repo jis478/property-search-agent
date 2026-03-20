@@ -97,15 +97,23 @@ def make_tool_result(name: str, output: Any, error: str | None) -> dict:
     }
 
 
-def make_complete(run_id: str, listings: list, partial: bool = False) -> dict:
+def make_complete(
+    run_id: str,
+    listings: list,
+    partial: bool = False,
+    school_address: str | None = None,
+) -> dict:
     """Produce a 'complete' SSE event dict with extracted property listings."""
-    return {
+    out = {
         "type": "complete",
         "run_id": run_id,
         "count": len(listings),
         "partial": partial,
-        "listings": [l.model_dump() for l in listings],
+        "listings": [l.model_dump() if hasattr(l, "model_dump") else l for l in listings],
     }
+    if school_address:
+        out["school_address"] = school_address
+    return out
 
 
 def make_error(exc: Exception) -> dict:
@@ -141,6 +149,8 @@ async def run_agent(run_id: str, agent, query: str) -> None:
     run = run_store[run_id]
     queue: asyncio.Queue = run["queue"]
     run["status"] = "running"
+    logger.info("run_agent start: run_id=%s query=%r school=%r max_distance_meters=%s",
+        run_id, query, run.get("school_address"), run.get("max_distance_meters"))
     try:
         async for event in agent.astream_events(
             {"messages": [{"role": "user", "content": query}]},
@@ -203,13 +213,38 @@ async def run_agent(run_id: str, agent, query: str) -> None:
             from agent.exceptions import StepLimitError
             raise StepLimitError("Agent ran out of steps before completing the search.")
         listings = parse_listings_from_message(final_text) if final_text else []
+        logger.info("run_agent: parsed %d listings from property search (partial=%s)",
+            len(listings), partial)
         # If the agent output plain English instead of JSON (no "listings" key found),
         # treat it as a BotDetectedError — domain.com.au likely blocked the scrape.
         if not listings and final_text and '"listings"' not in final_text:
             from agent.exceptions import BotDetectedError
             raise BotDetectedError("Agent could not extract listings from domain.com.au screenshots.")
+
+        # Optional: filter by walking distance to school
+        school = run.get("school_address")
+        max_dist = run.get("max_distance_meters")
+        from config import settings
+
+        api_key = getattr(settings, "google_maps_api_key", "") or ""
+        if school and max_dist and api_key and listings:
+            from agent.enrichment import enrich_listings_with_school_distance
+
+            before_count = len(listings)
+            listings = enrich_listings_with_school_distance(
+                listings, school, float(max_dist), api_key
+            )
+            logger.info("run_agent: enrichment school=%r max=%sm: %d -> %d listings",
+                school, max_dist, before_count, len(listings))
+        else:
+            if school or max_dist:
+                logger.info("run_agent: skip enrichment (school=%r max_dist=%s api_key=%s)",
+                    school, max_dist, "set" if api_key else "missing")
+            school = None
+
         run["status"] = "complete"
-        await queue.put(make_complete(run_id, listings, partial=partial))
+        logger.info("run_agent complete: run_id=%s count=%d", run_id, len(listings))
+        await queue.put(make_complete(run_id, listings, partial=partial, school_address=school))
     except asyncio.CancelledError:
         run["status"] = "cancelled"
         raise
@@ -226,6 +261,7 @@ async def run_agent(run_id: str, agent, query: str) -> None:
         # detected AND zero listings were collected — this is a full failure.
         # All other exceptions (StepLimitError, MCPError, etc.) are also full failures.
         run["status"] = "error"
+        logger.exception("run_agent error: run_id=%s %s", run_id, exc)
         await queue.put(make_error(exc))
     finally:
         await queue.put(None)  # sentinel — tells SSE generator to stop

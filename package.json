@@ -1,0 +1,18 @@
+{
+  "name": "hobby",
+  "version": "1.0.0",
+  "description": "A LangGraph ReAct agent that accepts natural-language property search requests, navigates domain.com.au via a Playwright MCP subprocess, and streams results back through a FastAPI SSE API and single-page web UI.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.58.2"
+  }
+}
