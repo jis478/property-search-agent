@@ -109,7 +109,7 @@ def make_complete(
         "run_id": run_id,
         "count": len(listings),
         "partial": partial,
-        "listings": [l.model_dump() if hasattr(l, "model_dump") else l for l in listings],
+        "listings": [listing.model_dump() if hasattr(listing, "model_dump") else listing for listing in listings],
     }
     if school_address:
         out["school_address"] = school_address

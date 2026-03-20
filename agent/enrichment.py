@@ -11,7 +11,7 @@ import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from agent.models import PropertyListing
+    from agent.models import PropertyListing  # noqa: F401
 
 logger = logging.getLogger(__name__)
 

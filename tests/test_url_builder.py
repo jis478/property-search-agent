@@ -1,5 +1,4 @@
 """Tests for build_search_url in agent/url_builder.py."""
-import pytest
 from agent.url_builder import build_search_url, PROPERTY_TYPE_MAP
 
 

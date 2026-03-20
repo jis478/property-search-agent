@@ -6,18 +6,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI, Request  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import JSONResponse  # noqa: E402
+from fastapi.templating import Jinja2Templates  # noqa: E402
 
-from config import settings  # noqa: F401 — ensures settings loaded and validated at startup
-from mcp_subprocess.manager import MCPManager
-from agent import build_agent
-from agent.chat_graph import build_chat_graph
-from api.search import router as search_router
-from api.stream import router as stream_router
-from api.chat import router as chat_router
+from config import settings  # noqa: E402,F401 — ensures settings loaded and validated at startup
+from mcp_subprocess.manager import MCPManager  # noqa: E402
+from agent import build_agent  # noqa: E402
+from agent.chat_graph import build_chat_graph  # noqa: E402
+from api.search import router as search_router  # noqa: E402
+from api.stream import router as stream_router  # noqa: E402
+from api.chat import router as chat_router  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
     manager = MCPManager()
     try:
         tools = await manager.start()
-    except RuntimeError as e:
+    except RuntimeError:
         logger.error("ERROR: MCP subprocess failed — check Node.js and @playwright/mcp installation")
         raise  # Hard fail: FastAPI refuses to start; process exits non-zero
 
@@ -92,8 +92,6 @@ async def list_tools(request: Request):
 
 @app.get("/")
 async def index(request: Request):
-    from config import settings
-
     return templates.TemplateResponse(
         request,
         "index.html",

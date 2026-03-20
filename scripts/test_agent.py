@@ -41,7 +41,7 @@ async def main():
     except StepLimitError as e:
         print(f"STEP LIMIT: {e}", file=sys.stderr)
         sys.exit(1)
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         sys.exit(1)
     finally:
