@@ -38,3 +38,10 @@ Thumbs.db
 
 # Node
 node_modules/
+
+# Claude Code — ignore personal config, commit only commands/
+.claude/settings.json
+.claude/settings.local.json
+.claude/agents/
+.claude/hooks/
+.claude/get-shit-done/
