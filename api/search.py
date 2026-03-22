@@ -11,6 +11,14 @@ import re
 import uuid
 from typing import Any
 
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
+
+from agent.exceptions import BotDetectedError, MCPError, StepLimitError
+
+router = APIRouter()
+logger = logging.getLogger(__name__)
+
 
 def _normalise_address(address: str) -> str:
     """Normalise a listing address to a slug for URL matching.
@@ -39,13 +47,6 @@ def _match_listing_url(address: str, link_map: dict[str, str]) -> str | None:
                 return url
     return None
 
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
-
-from agent.exceptions import BotDetectedError, MCPError, StepLimitError
-
-router = APIRouter()
-logger = logging.getLogger(__name__)
 
 # run_id -> {status, queue, task, query, _final_text}
 # status values: "pending" | "running" | "complete" | "error" | "cancelled"
