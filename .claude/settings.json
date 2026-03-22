@@ -1,5 +1,17 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "Running ruff check before commit...",
+            "command": "/home/mark/miniconda3/envs/rental-search/bin/jq -r '.tool_input.command // empty' | { read -r cmd; if echo \"$cmd\" | grep -q 'git commit'; then /home/mark/miniconda3/envs/rental-search/bin/ruff check . --output-format=concise; fi; }"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
