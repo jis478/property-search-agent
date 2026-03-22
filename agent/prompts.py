@@ -2,10 +2,11 @@ SYSTEM_PROMPT = """You are a property search assistant that extracts rental list
 
 ## Allowed Tools
 
-You may ONLY use these four tools:
+You may ONLY use these five tools:
 - browser_navigate — navigate to a URL
 - browser_wait_for — wait a specified number of seconds for JavaScript to finish loading
 - browser_get_text — get the rendered text content of the current page
+- browser_get_links — get all href links from the current page, with an optional prefix filter
 - browser_take_screenshot — capture the page as an image (use ONLY for bot detection)
 
 ## Your Task
@@ -29,8 +30,8 @@ You will receive a natural-language rental search query (e.g. "2 bedroom apartme
    - Page 2: same URL with `page=1` replaced by `page=2`
    - Page 3: same URL with `page=1` replaced by `page=3`
 2. Call browser_wait_for to wait 5 seconds (domain.com.au loads listings via JavaScript API calls)
-3. Call browser_get_text to get the page's rendered text content
-4. Extract all property listings from the text
+3. Call browser_get_links (no arguments) — collects listing URLs for this page (the server handles matching automatically)
+4. Call browser_get_text to get the page's rendered text content
 
 ## Bot Detection
 
@@ -55,7 +56,7 @@ Domain.com.au listing text typically looks like:
 
 For each listing visible in the text, extract:
 - address: full street address (e.g., "12 Smith Street, Richmond VIC 3121")
-- listing_url: the URL of the individual listing if you can determine it, otherwise null
+- listing_url: set to null (the server will fill this in automatically from browser_get_links)
 - price: price as shown (e.g., "$550 per week", "$450 pw") or null
 - bedrooms: integer or null
 - bathrooms: integer or null

@@ -11,6 +11,34 @@ import re
 import uuid
 from typing import Any
 
+
+def _normalise_address(address: str) -> str:
+    """Normalise a listing address to a slug for URL matching.
+
+    E.g. "1103/4 Francis Road, Artarmon NSW 2064" → "1103-4-francis-road-artarmon-nsw-2064"
+    """
+    s = address.lower()
+    s = s.replace("/", "-")
+    s = re.sub(r"[,.]", "", s)
+    s = re.sub(r"\s+", "-", s.strip())
+    s = re.sub(r"-+", "-", s)
+    return s
+
+
+def _match_listing_url(address: str, link_map: dict[str, str]) -> str | None:
+    """Find the URL for a listing address using slug prefix matching."""
+    if not address or not link_map:
+        return None
+    slug = _normalise_address(address)
+    # Try progressively shorter prefixes (drop state+postcode suffix if needed)
+    parts = slug.split("-")
+    for length in range(len(parts), max(2, len(parts) - 3) - 1, -1):
+        prefix = "-".join(parts[:length])
+        for map_slug, url in link_map.items():
+            if map_slug.startswith(prefix):
+                return url
+    return None
+
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
@@ -41,6 +69,7 @@ TOOL_LABELS = {
     "browser_navigate":       _navigate_label,
     "browser_wait_for":       lambda args: "Waiting for page to load",
     "browser_get_text":       lambda args: "Reading listings",
+    "browser_get_links":      lambda args: "Collecting listing URLs",
     "browser_take_screenshot": lambda args: "Checking for bot detection",
 }
 
@@ -149,6 +178,7 @@ async def run_agent(run_id: str, agent, query: str) -> None:
     run = run_store[run_id]
     queue: asyncio.Queue = run["queue"]
     run["status"] = "running"
+    link_map: dict[str, str] = {}  # normalised_slug → listing URL
     logger.info("run_agent start: run_id=%s query=%r school=%r max_distance_meters=%s",
         run_id, query, run.get("school_address"), run.get("max_distance_meters"))
     try:
@@ -186,6 +216,11 @@ async def run_agent(run_id: str, agent, query: str) -> None:
             elif kind == "on_tool_end":
                 name = event["name"]
                 output = event["data"].get("output")
+                if name == "browser_get_links" and isinstance(output, str):
+                    for line in output.splitlines():
+                        if " :: " in line:
+                            slug, url = line.split(" :: ", 1)
+                            link_map[slug.strip()] = url.strip()
                 await queue.put(make_tool_result(name, output, None))
 
         # Parse listings from the last complete LLM response after astream_events exhaustion.
@@ -215,6 +250,20 @@ async def run_agent(run_id: str, agent, query: str) -> None:
         listings = parse_listings_from_message(final_text) if final_text else []
         logger.info("run_agent: parsed %d listings from property search (partial=%s)",
             len(listings), partial)
+        # Enrich listing_url from Python-side link_map (agent slug-matching is unreliable)
+        if link_map:
+            enriched_with_url = 0
+            new_listings = []
+            for listing in listings:
+                if not listing.listing_url and listing.address:
+                    matched = _match_listing_url(listing.address, link_map)
+                    if matched:
+                        listing = listing.model_copy(update={"listing_url": matched})
+                        enriched_with_url += 1
+                new_listings.append(listing)
+            listings = new_listings
+            logger.info("run_agent: enriched %d/%d listings with listing_url from link_map",
+                enriched_with_url, len(listings))
         # If the agent output plain English instead of JSON (no "listings" key found),
         # treat it as a BotDetectedError — domain.com.au likely blocked the scrape.
         if not listings and final_text and '"listings"' not in final_text:

@@ -146,6 +146,52 @@ async def browser_get_text() -> str:
     return text[:15_000]
 
 
+@mcp.tool(description="Get individual property listing URLs from the current domain.com.au page")
+async def browser_get_links(prefix: str = "") -> str:
+    """Return individual property listing URLs from the current domain.com.au page.
+
+    Listing URLs follow the pattern:
+        https://www.domain.com.au/{address-slug}-{numeric-id}
+    e.g. https://www.domain.com.au/1103-4-francis-road-artarmon-nsw-2064-18033311
+
+    The address is embedded in the URL slug (everything before the last -DIGITS).
+    Match each URL to a listing by normalising the listing address:
+    lowercase, replace '/' with '-', remove commas, replace spaces with '-'.
+
+    Returns:
+        Newline-separated list of listing URLs (up to 100).
+    """
+    page = _page
+    if page is None:
+        raise RuntimeError("Browser not initialised")
+    links: list[str] = await page.evaluate("""() => {
+        const seen = new Set();
+        const results = [];
+        const listingPattern = /^https:\\/\\/www\\.domain\\.com\\.au\\/[^/]+-\\d+\\/?$/;
+        for (const a of document.querySelectorAll('a[href]')) {
+            const href = a.href.split('?')[0].split('#')[0];
+            if (!seen.has(href) && listingPattern.test(href)) {
+                seen.add(href);
+                results.push(href);
+            }
+            if (results.length >= 100) break;
+        }
+        return results;
+    }""")
+    if not links:
+        return "No listing links found."
+    # Return each URL with its normalised address slug (strip trailing numeric ID)
+    # Format: <normalised-slug> :: <full-url>
+    # Agent should normalise the listing address the same way and do an exact startswith match.
+    import re as _re
+    lines = []
+    for url in links:
+        path = url.rstrip("/").split("/")[-1]          # e.g. 1103-4-francis-road-artarmon-nsw-2064-18033311
+        slug = _re.sub(r"-\d+$", "", path)             # strip trailing -ID → 1103-4-francis-road-artarmon-nsw-2064
+        lines.append(f"{slug} :: {url}")
+    return "\n".join(lines)
+
+
 @mcp.tool(description="Wait for the specified number of seconds")
 async def browser_wait_for(time: float = 2.0) -> str:
     """Sleep for the given number of seconds.
