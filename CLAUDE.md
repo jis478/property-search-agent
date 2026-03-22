@@ -39,6 +39,17 @@ Server runs at `http://localhost:8000`.
 - No Tailwind — all custom CSS
 - **Always run `/preview` after any change to `templates/index.html`**
 
+## Testing before declaring done
+
+Before telling the user a fix is complete, verify it actually works:
+
+- **MCP tool changes** (`playwright_mcp_server.py`): test the tool directly with a Playwright script against a real domain.com.au page
+- **Agent/prompt changes**: run `/run-search` with a real query and check the output
+- **API changes**: call the relevant endpoint with `curl` and inspect the response
+- **Frontend changes**: run `/preview` and visually confirm the result
+
+Never say "this should work" or "try it now" without running a test first.
+
 ## Code conventions
 
 - Linting: `ruff` (configured in `pyproject.toml` or defaults)
