@@ -446,6 +446,31 @@
             background: var(--gold-dim);
             margin: 4px 0;
         }
+
+        /* ── Thinking bubble ── */
+        .bubble.thinking {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 14px 18px;
+        }
+
+        .thinking-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--gold);
+            animation: thinkBounce 1.2s ease-in-out infinite;
+            opacity: 0.4;
+        }
+
+        .thinking-dot:nth-child(2) { animation-delay: 0.18s; }
+        .thinking-dot:nth-child(3) { animation-delay: 0.36s; }
+
+        @keyframes thinkBounce {
+            0%, 60%, 100% { transform: translateY(0);   opacity: 0.4; }
+            30%            { transform: translateY(-5px); opacity: 1;   }
+        }
     </style>
 </head>
 <body>
@@ -511,10 +536,11 @@
     const noResults      = document.getElementById('no-results');
     const resultsCount   = document.getElementById('results-count');
 
-    let messages        = [];
-    let currentEs       = null;
-    let lastStepEl      = null;
-    let pendingToolCall = null;
+    let messages          = [];
+    let currentEs         = null;
+    let lastStepEl        = null;
+    let pendingToolCall   = null;
+    let thinkingBubbleRow = null;
 
     // ── Helpers ───────────────────────────────────────────────────────────
     function esc(str) {
@@ -536,6 +562,26 @@
         row.appendChild(bubble);
         chatLog.appendChild(row);
         chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function showThinkingBubble() {
+        if (thinkingBubbleRow) return;
+        const row = document.createElement('div');
+        row.className = 'chat-row assistant';
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble assistant thinking';
+        bubble.innerHTML = '<div class="thinking-dot"></div><div class="thinking-dot"></div><div class="thinking-dot"></div>';
+        row.appendChild(bubble);
+        chatLog.appendChild(row);
+        chatLog.scrollTop = chatLog.scrollHeight;
+        thinkingBubbleRow = row;
+    }
+
+    function removeThinkingBubble() {
+        if (thinkingBubbleRow) {
+            thinkingBubbleRow.remove();
+            thinkingBubbleRow = null;
+        }
     }
 
     // ── UI state ──────────────────────────────────────────────────────────
@@ -565,6 +611,7 @@
     }
 
     function showError(msg) {
+        removeThinkingBubble();
         errorBanner.textContent = msg;
         errorBanner.classList.add('visible');
         statusBar.classList.add('visible');
@@ -577,6 +624,7 @@
         browser_navigate:        '> nav  ',
         browser_wait_for:        '> wait ',
         browser_get_text:        '> read ',
+        browser_get_links:       '> link ',
         browser_take_screenshot: '> snap ',
     };
 
@@ -621,10 +669,9 @@
         const meta = metaParts.length
             ? `<div class="meta">${metaParts.join(' · ')}</div>` : '';
 
-        const url = safeUrl(listing.listing_url);
-        const cta = url
-            ? `<a href="${url}" target="_blank" rel="noopener noreferrer" class="cta">View on Domain</a>`
-            : '';
+        const url = safeUrl(listing.listing_url)
+            || `https://www.domain.com.au/rent/?q=${encodeURIComponent(listing.address || '')}`;
+        const cta = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="cta">View on Domain</a>`;
 
         let mapBlock = '';
         if (schoolAddress && listing.address) {
@@ -646,6 +693,7 @@
     }
 
     function renderResults(data) {
+        removeThinkingBubble();
         setIdle();
         resultsSection.classList.add('visible');
         cardGrid.innerHTML = '';
@@ -779,11 +827,8 @@
 
             const data = await res.json();
 
-            if (data.reply) {
-                appendBubble('assistant', data.reply);
-            }
-
             if (data.tool_call) {
+                showThinkingBubble();
                 messages.push({
                     role: 'assistant',
                     content: data.reply || '',
@@ -792,6 +837,7 @@
                 pendingToolCall = data.tool_call;
                 subscribeToRun(data.run_id);
             } else {
+                if (data.reply) appendBubble('assistant', data.reply);
                 messages.push({ role: 'assistant', content: data.reply || '' });
                 setIdle();
             }
